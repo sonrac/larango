@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/sonrac/larango.svg?branch=master)](https://travis-ci.org/sonrac/larango) 
-[![StyleCI](https://styleci.io/repos/105322873/shield?branch=master&style=flat)](https://styleci.io/repos/105322873)
+[![StyleCI](https://styleci.io/repos/109737875/shield?branch=master&style=flat)](https://styleci.io/repos/105322873)
 [![codecov](https://codecov.io/gh/sonrac/larango/branch/master/graph/badge.svg)](https://codecov.io/gh/sonrac/larango)
     
 ![Scrutinizer Build](https://scrutinizer-ci.com/g/sonrac/larango/badges/build.png?b=master)

@@ -28,7 +28,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "sonrac\\Arango\\tests": "tests"
+            "sonrac\\Arango\\tests\\": "tests"
         }
     }
 }

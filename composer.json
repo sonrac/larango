@@ -1,0 +1,34 @@
+{
+    "name": "sonrac/larango",
+    "description": "Arango Adapter for lumen & laravel",
+    "type": "library",
+    "require-dev": {
+        "phpunit/phpunit": "^6.4",
+        "mockery/mockery": "^1.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Donii Sergii",
+            "email": "doniysa@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "triagens/arangodb": "^3.2",
+        "illuminate/support": "^5.5",
+        "illuminate/container": "^5.5",
+        "illuminate/database": "^5.5",
+        "illuminate/events": "^5.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "sonrac\\Arango\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "sonrac\\Arango\\tests": "tests"
+        }
+    }
+}

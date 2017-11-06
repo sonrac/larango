@@ -12,5 +12,4 @@ namespace sonrac\Arango;
  */
 class ArangoServiceProvider
 {
-
 }

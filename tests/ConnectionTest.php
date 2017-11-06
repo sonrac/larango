@@ -22,13 +22,14 @@ class ConnectionTest extends TestCase
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function testGetDB() {
+    public function testGetDB()
+    {
         $connection = new Connection();
 
         $this->assertEquals('_system', $connection->getDb());
 
         $connection = new Connection([
-            ConnectionOptions::OPTION_DATABASE => '_test'
+            ConnectionOptions::OPTION_DATABASE => '_test',
         ]);
 
         $this->assertEquals('_test', $connection->getDb());

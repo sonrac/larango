@@ -5,8 +5,9 @@
 
 namespace sonrac\Arango;
 
-use Illuminate\Database\Connection as IlluminateConnection;
 use ArangoDBClient\ConnectionOptions as ArangoDBConnectionOptions;
+use Illuminate\Database\Connection as IlluminateConnection;
+
 /**
  * Class Connection.
  * Arango connection.
@@ -38,7 +39,8 @@ class Connection extends IlluminateConnection
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function getDb() {
+    public function getDb()
+    {
         if (!isset($this->config[ArangoDBConnectionOptions::OPTION_DATABASE])) {
             $this->config[ArangoDBConnectionOptions::OPTION_DATABASE] = '_system';
         }

@@ -5,7 +5,6 @@
 
 namespace sonrac\Arango\Query;
 
-
 /**
  * Class QueryBuilder.
  *
@@ -13,5 +12,4 @@ namespace sonrac\Arango\Query;
  */
 class QueryBuilder
 {
-
 }

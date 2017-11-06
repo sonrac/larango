@@ -5,33 +5,38 @@
 
 namespace sonrac\Arango\tests;
 
+use ArangoDBClient\CollectionHandler;
 use ArangoDBClient\ConnectionOptions;
 use PHPUnit\Framework\TestCase;
 use sonrac\Arango\Connection;
 
 /**
- * Class ConnectionTestTest
- * Test ConnectionTestTest
+ * Class ConnectionTest
+ * Connection test.
  *
- * @author Donii Sergii <doniysa@gmail.com>
+ * @package sonrac\Arango\tests
+ *
+ * @author  Donii Sergii <doniysa@gmail.com>
  */
 class ConnectionTest extends TestCase
 {
     /**
-     * Test get database name
+     * Test create connection.
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function testGetDB()
+    public function testCreateConnection()
     {
         $connection = new Connection();
 
-        $this->assertEquals('_system', $connection->getDb());
+        $this->assertInstanceOf(\ArangoDBClient\Connection::class, $connection->createConnection());
 
-        $connection = new Connection([
-            ConnectionOptions::OPTION_DATABASE => '_test',
-        ]);
+        $this->assertInstanceOf(\ArangoDBClient\Connection::class, $connection->createConnection([
+            ConnectionOptions::OPTION_ENDPOINT => ''
+        ]));
 
-        $this->assertEquals('_test', $connection->getDb());
+        $this->assertInstanceOf(\ArangoDBClient\Connection::class, $connection->getArangoClient());
+
+        $this->assertInstanceOf(CollectionHandler::class, $connection->getArangoDB());
     }
 }

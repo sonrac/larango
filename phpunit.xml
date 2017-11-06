@@ -18,6 +18,7 @@
     </filter>
     <testsuites>
         <testsuite name="Connection test">
+            <directory>./tests/ConnectionOptionsTest.php</directory>
             <directory>./tests/ConnectionTest.php</directory>
         </testsuite>
     </testsuites>

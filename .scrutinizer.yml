@@ -1,11 +1,20 @@
 build:
   dependencies:
       before:
-          - curl -O https://download.arangodb.com/arangodb32/xUbuntu_17.04/Release.key
+          - sudo apt-get update -y
+          - apt-cache policy libssl1.0.0
+          - sudo apt-get install libssl1.0.0 libssl-dev openssl openssl -y
+          - curl -O https://download.arangodb.com/arangodb32/xUbuntu_14.04/Release.key
           - sudo apt-key add - < Release.key
-          - echo 'deb https://download.arangodb.com/arangodb32/xUbuntu_17.04/ /' | sudo tee /etc/apt/sources.list.d/arangodb.list
+          - echo 'deb https://download.arangodb.com/arangodb32/xUbuntu_14.04/ /' | sudo tee /etc/apt/sources.list.d/arangodb.list
           - sudo apt-get install apt-transport-https
           - sudo apt-get update
+          - sudo debconf-set-selections <<< 'arangodb3 arangodb3/password password root';
+          - sudo sudo debconf-set-selections <<< 'arangodb3 arangodb3/password_again password root';
+          - sudo debconf-set-selections <<< 'arangodb3 arangodb3/upgrade boolean true';
+          - sudo debconf-set-selections <<< 'arangodb3 arangodb3/backup boolean true';
+          - sudo debconf-set-selections <<< 'arangodb3 arangodb3/config select yes';
+          - sudo debconf-set-selections <<< 'arangodb3 arangodb3/storage_engine select auto';
           - sudo apt-get install arangodb3=3.2.6
   environment:
         php:

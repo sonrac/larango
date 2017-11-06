@@ -5,12 +5,13 @@
 
 namespace sonrac\Arango;
 
+use ArangoDBClient\CollectionHandler as ArangoDBCollectionHandler;
 use ArangoDBClient\Connection as ArangoDBConnection;
 use ArangoDBClient\ConnectionOptions as ArangoDBConnectionOptions;
 use ArangoDBClient\Exception as ArangoException;
 use ArangoDBClient\UpdatePolicy as ArangoDBUpdatePolicy;
 use Illuminate\Database\Connection as IlluminateConnection;
-use ArangoDBClient\CollectionHandler as ArangoDBCollectionHandler;
+
 /**
  * Class Connection.
  * Arango connection.
@@ -62,7 +63,8 @@ class Connection extends IlluminateConnection
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function getArangoDB() {
+    public function getArangoDB()
+    {
         return $this->db;
     }
 
@@ -73,9 +75,11 @@ class Connection extends IlluminateConnection
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function getArangoClient() {
+    public function getArangoClient()
+    {
         return $this->arangoConnection;
     }
+
     /**
      * Create new arango.db connection.
      *

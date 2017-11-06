@@ -5,7 +5,6 @@
 
 namespace sonrac\Arango\tests;
 
-use ArangoDBClient\ClientException;
 use ArangoDBClient\ConnectionOptions;
 use ArangoDBClient\UpdatePolicy;
 use PHPUnit\Framework\TestCase;
@@ -42,7 +41,8 @@ class ConnectionOptionsTest extends TestCase
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function testGetEndpoint() {
+    public function testGetEndpoint()
+    {
         $connection = new Connection();
 
         $this->assertEquals('tcp://127.0.0.1:8529', $connection->getEndPoint());
@@ -59,7 +59,8 @@ class ConnectionOptionsTest extends TestCase
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function testGetAuthType() {
+    public function testGetAuthType()
+    {
         $connection = new Connection();
 
         $this->assertEquals('Basic', $connection->getAuthType());
@@ -70,7 +71,8 @@ class ConnectionOptionsTest extends TestCase
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function testGetAuthUser() {
+    public function testGetAuthUser()
+    {
         $connection = new Connection();
 
         $this->assertEquals('root', $connection->getAuthUser());
@@ -87,7 +89,8 @@ class ConnectionOptionsTest extends TestCase
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function testGetAuthPassword() {
+    public function testGetAuthPassword()
+    {
         $connection = new Connection();
 
         $this->assertEquals('', $connection->getAuthPassword());
@@ -104,7 +107,8 @@ class ConnectionOptionsTest extends TestCase
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function testGetConection() {
+    public function testGetConection()
+    {
         $connection = new Connection();
 
         $this->assertEquals('Keep-Alive', $connection->getConnectionOption());
@@ -121,7 +125,8 @@ class ConnectionOptionsTest extends TestCase
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function testGetTimeout() {
+    public function testGetTimeout()
+    {
         $connection = new Connection();
 
         $this->assertEquals(3, $connection->getTimeout());
@@ -138,7 +143,8 @@ class ConnectionOptionsTest extends TestCase
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function testReconnect() {
+    public function testReconnect()
+    {
         $connection = new Connection();
 
         $this->assertTrue($connection->getReconnect());
@@ -155,7 +161,8 @@ class ConnectionOptionsTest extends TestCase
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function testCreateOption() {
+    public function testCreateOption()
+    {
         $connection = new Connection();
 
         $this->assertTrue($connection->getCreate());
@@ -172,7 +179,8 @@ class ConnectionOptionsTest extends TestCase
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
-    public function testUpdatePolicy() {
+    public function testUpdatePolicy()
+    {
         $connection = new Connection();
 
         $this->assertEquals(UpdatePolicy::LAST, $connection->getUpdatePolicy());
@@ -183,5 +191,4 @@ class ConnectionOptionsTest extends TestCase
 
         $this->assertEquals(UpdatePolicy::ERROR, $connection->getUpdatePolicy());
     }
-
 }

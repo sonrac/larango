@@ -8,22 +8,37 @@ sudo: true
 cache:
   directories:
   - vendor
+
 before_install:
   - sudo pip install codecov
-  - curl -O https://download.arangodb.com/arangodb32/xUbuntu_17.04/Release.key
+  - sudo apt-get update -y
+  - apt-cache policy libssl1.0.0
+  - sudo apt-get install libssl1.0.0 libssl-dev openssl openssl -y
+  - curl -O https://download.arangodb.com/arangodb32/xUbuntu_14.04/Release.key
   - sudo apt-key add - < Release.key
-  - echo 'deb https://download.arangodb.com/arangodb32/xUbuntu_17.04/ /' | sudo tee /etc/apt/sources.list.d/arangodb.list
+  - echo 'deb https://download.arangodb.com/arangodb32/xUbuntu_14.04/ /' | sudo tee /etc/apt/sources.list.d/arangodb.list
   - sudo apt-get install apt-transport-https
   - sudo apt-get update
+  - sudo debconf-set-selections <<< 'arangodb3 arangodb3/password password root';
+  - sudo sudo debconf-set-selections <<< 'arangodb3 arangodb3/password_again password root';
+  - sudo debconf-set-selections <<< 'arangodb3 arangodb3/upgrade boolean true';
+  - sudo debconf-set-selections <<< 'arangodb3 arangodb3/backup boolean true';
+  - sudo debconf-set-selections <<< 'arangodb3 arangodb3/config select yes';
+  - sudo debconf-set-selections <<< 'arangodb3 arangodb3/storage_engine select auto';
   - sudo apt-get install arangodb3=3.2.6
+
 install:
   - travis_retry composer install --prefer-dist --no-interaction
+
 script:
   - bash run-tests.sh
+
 after_success:
   - codecov
+
 after_script:
   - travis_retry wget https://scrutinizer-ci.com/ocular.phar
   - php ocular.phar code-coverage:upload --format=php-clover coverage/coverage.clover
+
 notifications:
   email: false

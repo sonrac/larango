@@ -32,7 +32,7 @@ class ConnectionTest extends TestCase
         $this->assertInstanceOf(\ArangoDBClient\Connection::class, $connection->createConnection());
 
         $this->assertInstanceOf(\ArangoDBClient\Connection::class, $connection->createConnection([
-            ConnectionOptions::OPTION_ENDPOINT => ''
+            ConnectionOptions::OPTION_ENDPOINT => '',
         ]));
 
         $this->assertInstanceOf(\ArangoDBClient\Connection::class, $connection->getArangoClient());

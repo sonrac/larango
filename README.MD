@@ -2,9 +2,9 @@
 [![StyleCI](https://styleci.io/repos/109737875/shield?branch=master&style=flat)](https://styleci.io/repos/109737875)
 [![codecov](https://codecov.io/gh/sonrac/larango/branch/master/graph/badge.svg)](https://codecov.io/gh/sonrac/larango)
     
-![Scrutinizer Build](https://scrutinizer-ci.com/g/sonrac/larango/badges/build.png?b=master)
-![Scrutinizer](https://scrutinizer-ci.com/g/sonrac/larango/badges/quality-score.png?b=master)
-![Scrutinizer Code Coverage](https://scrutinizer-ci.com/g/sonrac/larango/badges/coverage.png?b=master)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/sonrac/larango/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/sonrac/larango/?branch=master)
+[![Code Coverage](https://scrutinizer-ci.com/g/sonrac/larango/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/sonrac/larango/?branch=master)
+[![Build Status](https://scrutinizer-ci.com/g/sonrac/larango/badges/build.png?b=master)](https://scrutinizer-ci.com/g/sonrac/larango/build-status/master)
 
 [![Latest Stable Version](https://poser.pugx.org/sonrac/larango/v/stable)](https://packagist.org/packages/sonrac/larango)
 [![Latest Unstable Version](https://poser.pugx.org/sonrac/larango/v/unstable)](https://packagist.org/packages/sonrac/larango)

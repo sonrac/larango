@@ -5,7 +5,6 @@
 
 namespace sonrac\Arango\Schema;
 
-
 /**
  * Class Grammar
  *
@@ -15,5 +14,4 @@ namespace sonrac\Arango\Schema;
  */
 class Grammar extends \Illuminate\Database\Grammar
 {
-
 }

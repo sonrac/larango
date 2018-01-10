@@ -5,7 +5,7 @@
 
 namespace sonrac\Arango\Schema;
 
-use \Illuminate\Database\Schema\Builder as SchemaBuilder;
+use Illuminate\Database\Schema\Builder as SchemaBuilder;
 
 /**
  * Class Schema
@@ -23,6 +23,4 @@ class Builder extends SchemaBuilder
     {
         return true;
     }
-
-    
 }

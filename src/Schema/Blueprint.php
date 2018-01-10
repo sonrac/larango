@@ -5,7 +5,6 @@
 
 namespace sonrac\Arango\Schema;
 
-
 /**
  * Class Blueprint
  *
@@ -15,5 +14,4 @@ namespace sonrac\Arango\Schema;
  */
 class Blueprint extends \Illuminate\Database\Schema\Blueprint
 {
-
 }

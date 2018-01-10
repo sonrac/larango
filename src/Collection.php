@@ -10,9 +10,9 @@ use ArrayAccess;
 use Countable;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
+use Illuminate\Support\Collection as BaseCollection;
 use IteratorAggregate;
 use JsonSerializable;
-use Illuminate\Support\Collection as BaseCollection;
 
 /**
  * Class Collection.

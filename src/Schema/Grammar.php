@@ -5,6 +5,8 @@
 
 namespace sonrac\Arango\Schema;
 
+use \Illuminate\Database\Schema\Grammars\Grammar as SchemaGrammar;
+
 /**
  * Class Grammar
  *
@@ -12,6 +14,7 @@ namespace sonrac\Arango\Schema;
  *
  * @author  Donii Sergii <doniysa@gmail.com>
  */
-class Grammar extends \Illuminate\Database\Grammar
+class Grammar extends SchemaGrammar
 {
+
 }

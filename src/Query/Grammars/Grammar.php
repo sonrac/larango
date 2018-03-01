@@ -22,6 +22,7 @@ class Grammar extends IlluminateGrammar
      * @var array
      */
     protected $selectComponents = [
+        'aggregate',
         'from',
         'joins',
         'wheres',
@@ -30,11 +31,15 @@ class Grammar extends IlluminateGrammar
         'orders',
         'limit',
         'offset',
-        'aggregate',
         'columns',
         'unions',
         'lock',
     ];
+
+    function compileInsertGetId(Builder $query, $values, $sequence)
+    {
+        return $this->compileInsert($query, $values) . ' RETURN NEW';
+    }
 
     /**
      * @inheritdoc
@@ -44,7 +49,7 @@ class Grammar extends IlluminateGrammar
         // Essentially we will force every insert to be treated as a batch insert which
         // simply makes creating the SQL easier for us since we can utilize the same
         // basic routine regardless of an amount of records given to us to insert.
-        $table = $this->wrapTable($query->from);
+        $collection = $this->wrapTable($query->from);
 
         if (! is_array(reset($values))) {
             $values = [$values];
@@ -55,26 +60,117 @@ class Grammar extends IlluminateGrammar
         $parameters = [];
 
         foreach ($values as $record){
-
-            $parameters[] =  array_combine($columns, $record);
+            $bindValuesTmp = [];
+            foreach ($columns as $column){
+                if(!isset($record[$column])) continue;
+                $bindValuesTmp[$column] = $record[$column];
+            }
+            $parameters[] =  $bindValuesTmp;
         }
         $parameters = json_encode($parameters);
         $parameters = preg_replace('/"(\@B\w+)"/', '$1', $parameters);
 
-        return "FOR doc IN ".$parameters." INSERT doc INTO ".$table;
+        $aql =  "FOR doc IN ".$parameters." INSERT doc INTO ".$collection;
+        //var_dump($aql);
+        return $aql;
+    }
+
+    /**
+     * Wrap column and add table name
+     * @param $column
+     * @param bool $withCollection
+     * @return string
+     */
+    public function wrapColumn($column, $withCollection = true){
+        $column = '`'.$column.'`';
+        if($withCollection){
+            $column = 'doc.'.$column;
+        }
+        return $column;
+    }
+
+    /**
+     * Check table name valid
+     *
+     * @param  \Illuminate\Database\Query\Expression|string  $table
+     * @return string
+     */
+    public function wrapTable($table)
+    {
+        //TODO: Check Is valid table?.
+        return $table;
     }
 
     function columnize(array $columns)
     {
         $resultColumns = [];
         foreach ($columns as $column){
-            $wrapColumn = $this->wrap($column);
+            $wrapColumn = '`'.$column.'`';
             $resultColumns[] =  $wrapColumn . ': ' . static::DOCUMENT_NAME . '.' . $wrapColumn;
         }
         return implode(',', $resultColumns);
     }
 
-    function compileSelect(Builder $query)
+    /**
+     * Compile an update statement into SQL.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $values
+     * @return string
+     */
+    public function compileUpdate(Builder $query, $values)
+    {
+        $table = $this->wrapTable($query->from);
+
+        // Each one of the columns in the update statements needs to be wrapped in the
+        // keyword identifiers, also a place-holder needs to be created for each of
+        // the values in the list of bindings so we can make the sets statements.
+        $columns = collect($values)->map(function ($value, $key) {
+            return $key.' : '.$value;
+        })->implode(', ');
+
+        // If the query has any "join" clauses, we will setup the joins on the builder
+        // and compile them so we can attach them to this update, as update queries
+        // can get join statements to attach to other tables when they're needed.
+        $joins = '';
+
+        if (isset($query->joins)) {
+            $joins = ' '.$this->compileJoins($query, $query->joins);
+        }
+
+        // Of course, update queries may also be constrained by where clauses so we'll
+        // need to compile the where clauses and attach it to the query so only the
+        // intended records are updated by the SQL statements we generate to run.
+        $wheres = $this->compileWheres($query);
+
+        $aql = "FOR doc IN ".$table.$joins." ".$wheres." UPDATE doc WITH { ".$columns." } IN ".$table;
+        var_dump($aql);
+        return $aql;
+    }
+
+    /**
+     * Compile a delete statement into AQL.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return string
+     */
+    public function compileDelete(Builder $query)
+    {
+        $wheres = is_array($query->wheres) ? $this->compileWheres($query) : '';
+
+        $table = $this->wrapTable($query->from);
+        $aql = "FOR doc in {$table} $wheres REMOVE doc IN {$table}";
+        var_dump($aql);
+        return $aql;
+    }
+
+    /**
+     * Compile a select query into AQL.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return string
+     */
+    public function compileSelect(Builder $query)
     {
         // If the query does not have any columns set, we'll set the columns to the
         // * character to just get all of the columns from the database. Then we
@@ -84,15 +180,47 @@ class Grammar extends IlluminateGrammar
         if (is_null($query->columns)) {
             $query->columns = ['*'];
         }
+
         // To compile the query, we'll spin through each component of the query and
         // see if that component exists. If it does we'll just call the compiler
-        // function for the component which is responsible for making the SQL.
-        $sql = trim($this->concatenate(
+        // function for the component which is responsible for making the AQL.
+        $aql = trim($this->concatenate(
             $this->compileComponents($query))
         );
+
+        if(!is_null($query->aggregate)){
+            $aql = $this->compileAggregateExtended($query, $query->aggregate, $aql);
+        }
         $query->columns = $original;
 
-        return $sql;
+        return $aql;
+    }
+
+    /**
+     * Compile the components necessary for a select clause.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return array
+     */
+    protected function compileComponents(Builder $query)
+    {
+        $aql = [];
+
+        foreach ($this->selectComponents as $component) {
+            // To compile the query, we'll spin through each component of the query and
+            // see if that component exists. If it does we'll just call the compiler
+            // function for the component which is responsible for making the SQL.
+            if (! is_null($query->$component)) {
+                if($component === 'aggregate'){
+                    continue;
+                }
+                $method = 'compile'.ucfirst($component);
+
+                $aql[$component] = $this->$method($query, $query->$component);
+            }
+        }
+
+        return $aql;
     }
 
     /**
@@ -112,18 +240,18 @@ class Grammar extends IlluminateGrammar
      */
     protected function compileColumns(Builder $query, $columns)
     {
-        // If the query is actually performing an aggregating select, we will let that
-        // compiler handle the building of the select clauses, as it will need some
-        // more syntax that is best handled by that function to keep things neat.
-        if (! is_null($query->aggregate)) {
-            return;
-        }
         if(count($columns) === 1 && $columns[0] === "*"){
             return 'RETURN '.static::DOCUMENT_NAME;
         }
 
 
         return "RETURN { " . $this->columnize($columns) . " }";
+    }
+
+
+    protected function compileAggregateExtended(Builder $query, $aggregate, $aql)
+    {
+        return "RETURN {\"aggregate\":".$aggregate['function']."(".$aql.")}";
     }
 
     /**
@@ -198,10 +326,6 @@ class Grammar extends IlluminateGrammar
         }
 
         return '0 = 1';
-    }
-
-    protected function wrapColumn($column){
-        return 'doc.`'.$column.'`';
     }
 
     /**

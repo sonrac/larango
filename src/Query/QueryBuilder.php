@@ -4,6 +4,7 @@
  */
 
 namespace sonrac\Arango\Query;
+
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,6 +14,7 @@ use Illuminate\Database\Query\Grammars\Grammar;
 use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use sonrac\Arango\Connection;
 
 /**
  * Class QueryBuilder.
@@ -37,6 +39,76 @@ class QueryBuilder extends IlluminateBuilder
         '!~',     //tests if a string value does not match a regular expression
     ];
 
+    public function whereIn($column, $values, $boolean = 'and', $not = false)
+    {
+        $type = $not ? 'NotIn' : 'In';
+
+        if ($values instanceof Builder) {
+            $values = $values->getQuery();
+        }
+
+        // If the value is a query builder instance we will assume the developer wants to
+        // look for any values that exists within this given query. So we will add the
+        // query accordingly so that this query is properly executed when it is run.
+        if ($values instanceof self) {
+            return $this->whereInExistingQuery(
+                $column, $values, $boolean, $not
+            );
+        }
+
+        // If the value of the where in clause is actually a Closure, we will assume that
+        // the developer is using a full sub-select for this "in" statement, and will
+        // execute those Closures, then we can re-construct the entire sub-selects.
+        if ($values instanceof \Closure) {
+            return $this->whereInSub($column, $values, $boolean, $not);
+        }
+
+        // Next, if the value is Arrayable we need to cast it to its raw array form so we
+        // have the underlying array value instead of an Arrayable object which is not
+        // able to be added as a binding, etc. We will then add to the wheres array.
+        if ($values instanceof Arrayable) {
+            $values = $values->toArray();
+        }
+
+        // Finally we'll add a binding for each values unless that value is an expression
+        // in which case we will just skip over it since it will be the query as a raw
+        // string and not as a parameterized place-holder to be replaced by the PDO.
+        foreach ($values as $index => $value) {
+            if (!$value instanceof Expression) {
+                $this->addBinding($value, 'where');
+                $values[$index] = $this->getLastBindingKey();
+            }
+        }
+
+        $this->wheres[] = compact('type', 'column', 'values', 'boolean');
+
+        return $this;
+    }
+
+    public function addBinding($value, $type = 'where')
+    {
+        if (is_array($value)) {
+            foreach ($value as $variable) {
+                $this->bindings[$this->getBindingVariableName()] = $variable;
+            }
+        } else {
+            $this->bindings[$this->getBindingVariableName()] = $value;
+        }
+
+        return $this;
+    }
+
+    protected function getBindingVariableName()
+    {
+        return "B" . (count($this->bindings) + 1);
+    }
+
+    public function getLastBindingKey()
+    {
+        $keys = array_keys($this->getBindings());
+        return "@" . array_pop($keys);
+    }
+
     /**
      * Get the current query value bindings in a flattened array.
      *
@@ -45,6 +117,25 @@ class QueryBuilder extends IlluminateBuilder
     public function getBindings()
     {
         return $this->bindings;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function whereBetween($column, array $values, $boolean = 'and', $not = false)
+    {
+        $this->where(function (QueryBuilder $query) use ($column, $values, $boolean, $not) {
+            list($from, $to) = $values;
+            if (!$not) {
+                $query->where($column, '>', $from);
+                $query->where($column, '<', $to);
+            } else {
+                $query->where($column, '<=', $from);
+                $query->orWhere($column, '>=', $to);
+            }
+        }, $boolean);
+
+        return $this;
     }
 
     public function where($column, $operator = null, $value = null, $boolean = 'and')
@@ -103,7 +194,7 @@ class QueryBuilder extends IlluminateBuilder
         // will be bound to each SQL statements when it is finally executed.
         $type = 'Basic';
 
-        if (! $value instanceof Expression) {
+        if (!$value instanceof Expression) {
             $this->addBinding($value, 'where');
             $value = $this->getLastBindingKey();
         }
@@ -115,101 +206,113 @@ class QueryBuilder extends IlluminateBuilder
         return $this;
     }
 
-    public function whereIn($column, $values, $boolean = 'and', $not = false)
+    /**
+     * Increment a column's value by a given amount.
+     *
+     * @param  string  $column
+     * @param  int     $amount
+     * @param  array   $extra
+     * @return int
+     */
+    public function increment($column, $amount = 1, array $extra = [])
     {
-        $type = $not ? 'NotIn' : 'In';
-
-        if ($values instanceof Builder) {
-            $values = $values->getQuery();
+        if (! is_numeric($amount)) {
+            throw new \InvalidArgumentException('Non-numeric value passed to increment method.');
         }
 
-        // If the value is a query builder instance we will assume the developer wants to
-        // look for any values that exists within this given query. So we will add the
-        // query accordingly so that this query is properly executed when it is run.
-        if ($values instanceof self) {
-            return $this->whereInExistingQuery(
-                $column, $values, $boolean, $not
-            );
+        $wrapped = $this->grammar->wrapColumn($column);
+
+        $columns = array_merge([$column => $this->raw("$wrapped + $amount")], $extra);
+
+        return $this->update($columns);
+    }
+
+    /**
+     * Decrement a column's value by a given amount.
+     *
+     * @param  string  $column
+     * @param  int     $amount
+     * @param  array   $extra
+     * @return int
+     */
+    public function decrement($column, $amount = 1, array $extra = [])
+    {
+        if (! is_numeric($amount)) {
+            throw new \InvalidArgumentException('Non-numeric value passed to decrement method.');
         }
 
-        // If the value of the where in clause is actually a Closure, we will assume that
-        // the developer is using a full sub-select for this "in" statement, and will
-        // execute those Closures, then we can re-construct the entire sub-selects.
-        if ($values instanceof \Closure) {
-            return $this->whereInSub($column, $values, $boolean, $not);
-        }
+        $wrapped = $this->grammar->wrapColumn($column);
 
-        // Next, if the value is Arrayable we need to cast it to its raw array form so we
-        // have the underlying array value instead of an Arrayable object which is not
-        // able to be added as a binding, etc. We will then add to the wheres array.
-        if ($values instanceof Arrayable) {
-            $values = $values->toArray();
-        }
+        $columns = array_merge([$column => $this->raw("$wrapped - $amount")], $extra);
 
-        // Finally we'll add a binding for each values unless that value is an expression
-        // in which case we will just skip over it since it will be the query as a raw
-        // string and not as a parameterized place-holder to be replaced by the PDO.
-        foreach ($values as $index=>$value) {
-            if (! $value instanceof Expression) {
-                $this->addBinding($value, 'where');
+        return $this->update($columns);
+    }
+
+    /**
+     * Update a record in the database.
+     *
+     * @param  array  $values
+     * @return int
+     */
+    public function update(array $values)
+    {
+
+
+        foreach ($values as $index => $value) {
+            if (!$value instanceof Expression) {
+                $this->addBinding($value, 'update');
                 $values[$index] = $this->getLastBindingKey();
             }
         }
 
-        $this->wheres[] = compact('type', 'column', 'values', 'boolean');
+        $aql = $this->grammar->compileUpdate($this, $values);
 
-        return $this;
+        return $this->connection->update($aql, $this->getBindings());
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function whereBetween($column, array $values, $boolean = 'and', $not = false)
+    public function delete($id = null)
     {
-        $this->where(function(QueryBuilder $query) use ($column, $values, $boolean, $not){
-            list($from, $to) = $values;
-            if(!$not){
-                $query->where($column, '>', $from);
-                $query->where($column, '<', $to);
-            }
-            else{
-                $query->where($column, '<=', $from);
-                $query->orWhere($column, '>=', $to);
-            }
-        }, $boolean);
-
-        return $this;
-    }
-
-    public function addBinding($value, $type = 'where')
-    {
-        if (is_array($value)) {
-            foreach ($value as $variable){
-                $this->bindings[$this->getBindingVariableName()] = $variable;
-            }
-        } else {
-            $this->bindings[$this->getBindingVariableName()] = $value;
+        // If an ID is passed to the method, we will set the where clause to check the
+        // ID to let developers to simply and quickly remove a single row from this
+        // database without manually specifying the "where" clauses on the query.
+        if (! is_null($id)) {
+            $this->where($this->from.'.id', '=', $id);
         }
 
-        return $this;
+        return $this->connection->delete(
+            $this->grammar->compileDelete($this), $this->getBindings()
+        );
     }
+
+    protected function prepareValueAndOperator($value, $operator, $useDefault = false)
+    {
+        if ($useDefault) {
+            return [$operator, '=='];
+        } elseif ($this->invalidOperatorAndValue($operator, $value)) {
+            throw new \InvalidArgumentException('Illegal operator and value combination.');
+        }
+
+        return [$value, $operator];
+    }
+
     /**
      * @inheritdoc
      */
     public function truncate()
     {
-        $this->delete();
-    }
-
-    public function toAql(){
-        return $this->grammar->compileSelect($this);
+        $connection = $this->getConnection();
+        /**
+         * @var Connection $connection
+         */
+        $arangoDB = $connection->getArangoDB();
+        $arangoDB->truncate($this->from);
     }
 
     /**
      * Execute a query for a single record by KEY.
      *
      * @param  string $id
-     * @param  array  $columns
+     * @param  array $columns
      * @return mixed|static
      */
     public function find($id, $columns = ['*'])
@@ -218,9 +321,84 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
+     * Insert a new record and get the value of the primary key.
+     *
+     * @param  array   $values
+     * @param  string|null  $sequence
+     * @return int
+     */
+    public function insertGetId(array $values, $sequence = null)
+    {
+        if (!is_array(reset($values))) {
+            $values = [$values];
+        }
+
+        foreach ($values as $i => $record) {
+            foreach ($record as $j => $value) {
+                $this->addBinding($value, 'insert');
+                $values[$i][$j] = $this->getLastBindingKey();
+            }
+        }
+
+        $sql = $this->grammar->compileInsertGetId($this, $values, $sequence);
+
+        return $this->processor->processInsertGetId($this, $sql, $this->getBindings(), $sequence);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setAggregate($function, $columns)
+    {
+        $this->aggregate = compact('function', 'columns');
+
+        if (empty($this->groups)) {
+            $this->orders = null;
+
+            unset($this->bindings['order']);
+        }
+
+        return $this;
+    }
+
+    function sum($columns = '*')
+    {
+        return (int) $this->aggregate(strtoupper(__FUNCTION__), Arr::wrap($columns));
+    }
+
+    function count($columns = '*')
+    {
+        return (int) $this->aggregate(strtoupper(__FUNCTION__), Arr::wrap($columns));
+    }
+
+    public function aggregate($function, $columns = ['*'])
+    {
+        $results = $this->cloneWithout(['columns'])
+            ->cloneWithoutBindings(['select'])
+            ->setAggregate($function, $columns)
+            ->get($columns);
+
+        if (! $results->isEmpty()) {
+            return array_change_key_case((array) $results[0])['aggregate'];
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function cloneWithoutBindings(array $except)
+    {
+        return tap(clone $this, function ($clone) use ($except) {
+            foreach ($except as $type) {
+                unset($clone->bindings[$type]);
+            }
+        });
+    }
+
+    /**
      * Insert a new record into the database.
      *
-     * @param  array  $values
+     * @param  array $values
      * @return bool
      */
     public function insert(array $values)
@@ -232,7 +410,7 @@ class QueryBuilder extends IlluminateBuilder
             return true;
         }
 
-        if (! is_array(reset($values))) {
+        if (!is_array(reset($values))) {
             $values = [$values];
         }
 
@@ -247,14 +425,12 @@ class QueryBuilder extends IlluminateBuilder
             }
         }
 
-        foreach ($values as $i=>$record){
-            foreach ($record as $j=>$value){
+        foreach ($values as $i => $record) {
+            foreach ($record as $j => $value) {
                 $this->addBinding($value, 'insert');
                 $values[$i][$j] = $this->getLastBindingKey();
             }
-
         }
-
 
 
         // Finally, we will run this query against the database connection and return
@@ -264,11 +440,6 @@ class QueryBuilder extends IlluminateBuilder
             $this->grammar->compileInsert($this, $values),
             $this->getBindings()
         );
-    }
-
-    public function getLastBindingKey(){
-        $keys = array_keys($this->getBindings());
-        return "@".array_pop($keys);
     }
 
     /**
@@ -284,21 +455,6 @@ class QueryBuilder extends IlluminateBuilder
         $this->where(Str::snake($segment), '==', $parameters[$index], $bool);
     }
 
-    protected function prepareValueAndOperator($value, $operator, $useDefault = false)
-    {
-        if ($useDefault) {
-            return [$operator, '=='];
-        } elseif ($this->invalidOperatorAndValue($operator, $value)) {
-            throw new \InvalidArgumentException('Illegal operator and value combination.');
-        }
-
-        return [$value, $operator];
-    }
-
-    protected function getBindingVariableName(){
-        return "B".(count($this->bindings)+1);
-    }
-
     /**
      * @inheritdoc
      */
@@ -307,5 +463,12 @@ class QueryBuilder extends IlluminateBuilder
         return $this->connection->select(
             $this->toAql(), $this->getBindings()
         );
+    }
+
+    public function toAql()
+    {
+        $aql = $this->grammar->compileSelect($this);
+        var_dump($aql);
+        return $aql;
     }
 }

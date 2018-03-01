@@ -150,8 +150,30 @@ class Connection extends IlluminateConnection
         });
     }
 
+    public function affectingStatement($query, $bindings = [])
+    {
+        return $this->run($query, $bindings, function ($query, $bindings) {
+            $query = $this->prepareBindingsInQuery($query);
+
+            $options = [
+                'query' => $query,
+                'count' => true,
+                'batchSize' => 1000,
+                'sanitize'  => true
+            ];
+
+            if(count($bindings) > 0){
+                $options['bindVars'] = $this->prepareBindings($bindings);
+            }
+
+            $statement = new Statement($this->getArangoClient(), $options);
+
+            return $statement->execute();
+        });
+    }
+
     /**
-     * Get Arango.DB Query Builder
+     * Get Arango.DB
      *
      * @return mixed
      *

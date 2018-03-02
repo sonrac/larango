@@ -7,12 +7,18 @@ use \Illuminate\Database\Eloquent\Builder as BaseBuilder;
 
 abstract class Model extends BaseModel
 {
+    /**
+     * @inheritdoc
+     */
     protected $primaryKey = '_key';
 
+    /**
+     * @inheritdoc
+     */
     protected $keyType = 'string';
 
     /**
-     * Get the table qualified key name.
+     * Get the key name without collection (collection not use in AQL)
      *
      * @return string
      */
@@ -20,11 +26,16 @@ abstract class Model extends BaseModel
         return $this->getKeyName();
     }
 
+    /**
+     * Get collection name
+     * @return string
+     */
     function getCollectionName(){
         return $this->getTable();
     }
 
     /**
+     * Set collection name
      * @param string $collection
      */
     function setCollectionName(string $collection){

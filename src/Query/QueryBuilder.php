@@ -317,7 +317,7 @@ class QueryBuilder extends IlluminateBuilder
      */
     public function find($id, $columns = ['*'])
     {
-        return $this->where('doc._key', '==', $id)->first($columns);
+        return $this->where('doc._key', '==', $id)->limit(1)->first($columns);
     }
 
     /**

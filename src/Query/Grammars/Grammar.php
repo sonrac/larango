@@ -82,7 +82,9 @@ class Grammar extends IlluminateGrammar
      * @return string
      */
     public function wrapColumn($column, $withCollection = true){
-        $column = '`'.$column.'`';
+        if($column !== '_key'){
+            $column = '`'.$column.'`';
+        }
         if($withCollection){
             $column = 'doc.'.$column;
         }
@@ -326,6 +328,16 @@ class Grammar extends IlluminateGrammar
         }
 
         return '0 = 1';
+    }
+
+    protected function whereNull(Builder $query, $where)
+    {
+        return $this->wrapColumn($where['column']).' == NULL';
+    }
+
+    protected function whereNotNull(Builder $query, $where)
+    {
+        return $this->wrapColumn($where['column']).' != NULL';
     }
 
     /**

@@ -22,6 +22,6 @@ class Processor extends IlluminateProcessor
          * @var Document $document
          */
 
-        return $document->getId();
+        return $document->getKey();
     }
 }

@@ -10,7 +10,8 @@ namespace sonrac\Arango\Query\Grammars;
 
 use Illuminate\Database\Query\Builder;
 use \Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
-use sonrac\Arango\Helper;
+use function sonrac\Arango\Helpers\getEntityName;
+use function sonrac\Arango\Helpers\getEntityNameFromColumn;
 
 class Grammar extends IlluminateGrammar
 {
@@ -52,7 +53,7 @@ class Grammar extends IlluminateGrammar
         // basic routine regardless of an amount of records given to us to insert.
         $collection = $this->wrapTable($query->from);
 
-        $entityName = Helper::getEntityName($query->from);
+        $entityName = getEntityName($query->from);
 
         if (! is_array(reset($values))) {
             $values = [$values];
@@ -90,14 +91,14 @@ class Grammar extends IlluminateGrammar
      */
     public function wrapColumn($column, $collection = null, $withCollection = true){
 
-        $entityName = Helper::getEntityNameFromColumn($column);
+        $entityName = getEntityNameFromColumn($column);
 
         $clearColumn = $this->getClearColumnName($column);
 
         $alias = $this->getAliasNameFromColumn($column);
 
         if(is_null($entityName) && !is_null($collection)){
-            $entityName =  Helper::getEntityName($collection);
+            $entityName =  getEntityName($collection);
         }
 
         if($clearColumn !== '_key'){
@@ -169,7 +170,7 @@ class Grammar extends IlluminateGrammar
         // intended records are updated by the SQL statements we generate to run.
         $wheres = $this->compileWheres($query);
 
-        $entityName = Helper::getEntityName($table);
+        $entityName = getEntityName($table);
 
         $aql = $joins."FOR ".$entityName." IN ".$table." ".$wheres.
             " UPDATE ".$entityName." WITH { ".$columns." } IN ".$table;
@@ -186,7 +187,7 @@ class Grammar extends IlluminateGrammar
 
         return collect($joins)->map(function ($join) use(&$aql) {
             $table = $this->wrapTable($join->table);
-            $entityName = Helper::getEntityName($join->table);
+            $entityName = getEntityName($join->table);
             return 'FOR '.$entityName.' IN '.$table;
         })->implode(' ');
     }
@@ -199,7 +200,7 @@ class Grammar extends IlluminateGrammar
         $wheres = is_array($query->wheres) ? $this->compileWheres($query) : '';
 
         $collection = $this->wrapTable($query->from);
-        $entityName = Helper::getEntityName($collection);
+        $entityName = getEntityName($collection);
         $aql = "FOR {$entityName} in {$collection} {$wheres} REMOVE {$entityName} IN {$collection}";
         var_dump($aql);
         return $aql;
@@ -271,7 +272,7 @@ class Grammar extends IlluminateGrammar
      */
     protected function compileFrom(Builder $query, $collection)
     {
-        return 'FOR '.Helper::getEntityName($collection).' IN '.$this->wrapCollection($collection);
+        return 'FOR '.getEntityName($collection).' IN '.$this->wrapCollection($collection);
     }
 
     /**
@@ -280,7 +281,7 @@ class Grammar extends IlluminateGrammar
     protected function compileColumns(Builder $query, $columns)
     {
         if(count($columns) === 1 && $columns[0] === "*"){
-            return 'RETURN '.Helper::getEntityName($query->from);
+            return 'RETURN '.getEntityName($query->from);
         }
 
 

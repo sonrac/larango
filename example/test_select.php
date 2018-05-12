@@ -93,3 +93,7 @@ function selectWhereBetweenOr($builder){
     var_dump($data);
 }
 $connection->table('users')->truncate();
+
+$builder->where('test.a', '123');
+
+

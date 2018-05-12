@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Support\Str;
 use sonrac\Arango\Eloquent\Reletations\BelongsTo;
 use sonrac\Arango\Eloquent\Reletations\BelongsToMany;
-use sonrac\Arango\Helper;
+use function sonrac\Arango\Helpers\getEntityName;
 use sonrac\Arango\Query\QueryBuilder;
 use \Illuminate\Database\Eloquent\Builder as BaseBuilder;
 
@@ -64,7 +64,7 @@ abstract class Model extends BaseModel
     }
 
     public function getEntityName(){
-        return Helper::getEntityName($this->getCollection());
+        return getEntityName($this->getCollection());
     }
 
     /**
@@ -76,11 +76,7 @@ abstract class Model extends BaseModel
 
         $attributesResult = [];
         foreach ($attributes as $key => $value){
-            $queryBuilder = $this->newQuery()->getQuery();
-            /**
-             * @var QueryBuilder $queryBuilder
-             */
-            if(is_array($value) && $queryBuilder->grammar->getEntityName($this->getTable()) === $key){
+            if(is_array($value) && $this->getEntityName() === $key){
 
                 $attributesResult = array_merge($attributesResult, $value);
                 continue;

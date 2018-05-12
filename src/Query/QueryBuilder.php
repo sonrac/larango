@@ -13,7 +13,8 @@ use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use sonrac\Arango\Connection;
-use sonrac\Arango\Helper;
+use function sonrac\Arango\Helpers\getEntityName;
+use function sonrac\Arango\Helpers\getEntityNameFromColumn;
 use sonrac\Arango\Query\Grammars\Grammar;
 
 /**
@@ -649,18 +650,18 @@ class QueryBuilder extends IlluminateBuilder
         if(empty($this->joins)){
             return;
         }
-        $columnEntityName = Helper::getEntityNameFromColumn($column);
+        $columnEntityName = getEntityNameFromColumn($column);
 
         if(is_null($columnEntityName)){
             throw new Exception("You can't use column ".$column." without entity name, with join.");
         }
 
-        if($columnEntityName === Helper::getEntityName($this->from)){
+        if($columnEntityName === getEntityName($this->from)){
             return;
         }
 
         foreach ($this->joins as $join){
-            $joinEntityName = Helper::getEntityName($join->table);
+            $joinEntityName = getEntityName($join->table);
             if($columnEntityName === $joinEntityName){
                 return;
             }

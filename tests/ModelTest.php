@@ -25,7 +25,7 @@ class ModelTest extends BaseTestCase
         $this->assertInstanceOf('sonrac\Arango\Connection', $user->getConnection());
         $this->assertEquals(false, $user->exists);
         $this->assertEquals('users', $user->getTable());
-        $this->assertEquals('users', $user->getCollectionName());
+        $this->assertEquals('users', $user->getCollection());
         $this->assertEquals('_key', $user->getKeyName());
     }
 

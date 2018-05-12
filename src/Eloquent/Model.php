@@ -2,6 +2,10 @@
 namespace sonrac\Arango\Eloquent;
 
 use Illuminate\Database\Eloquent\Model as BaseModel;
+use Illuminate\Support\Str;
+use sonrac\Arango\Eloquent\Reletations\BelongsTo;
+use sonrac\Arango\Eloquent\Reletations\BelongsToMany;
+use sonrac\Arango\Helper;
 use sonrac\Arango\Query\QueryBuilder;
 use \Illuminate\Database\Eloquent\Builder as BaseBuilder;
 
@@ -18,36 +22,21 @@ abstract class Model extends BaseModel
     protected $keyType = 'string';
 
     /**
-     * Get the key name without collection (collection not use in AQL)
+     * Get collection name
      *
      * @return string
      */
-    public function getQualifiedKeyName(){
-        return $this->getKeyName();
-    }
-
-    /**
-     * Get collection name
-     * @return string
-     */
-    function getCollectionName(){
+    function getCollection(){
         return $this->getTable();
     }
 
     /**
      * Set collection name
+     *
      * @param string $collection
      */
-    function setCollectionName(string $collection){
+    function setCollection($collection){
         $this->table = $collection;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function newEloquentBuilder($query)
-    {
-        return new Builder($query);
     }
 
     /**
@@ -65,10 +54,90 @@ abstract class Model extends BaseModel
     /**
      * @inheritdoc
      */
-    protected function setKeysForSaveQuery(BaseBuilder $query)
+    public function qualifyColumn($column)
     {
-        $query->where($this->getKeyName(), '==', $this->getKeyForSaveQuery());
+        if (Str::contains($column, '.')) {
+            return $column;
+        }
 
-        return $query;
+        return $this->getEntityName().'.'.$column;
+    }
+
+    public function getEntityName(){
+        return Helper::getEntityName($this->getCollection());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function newFromBuilder($attributes = [], $connection = null)
+    {
+        $model = $this->newInstance([], true);
+
+        $attributesResult = [];
+        foreach ($attributes as $key => $value){
+            $queryBuilder = $this->newQuery()->getQuery();
+            /**
+             * @var QueryBuilder $queryBuilder
+             */
+            if(is_array($value) && $queryBuilder->grammar->getEntityName($this->getTable()) === $key){
+
+                $attributesResult = array_merge($attributesResult, $value);
+                continue;
+            }
+            $attributesResult[$key] = $value;
+        }
+
+        $model->setRawAttributes((array) $attributesResult, true);
+
+        $model->setConnection($connection ?: $this->getConnectionName());
+
+        $model->fireModelEvent('retrieved', false);
+
+        return $model;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasOne($related, $foreignKey = null, $localKey = null)
+    {
+        $instance = $this->newRelatedInstance($related);
+
+        $foreignKey = $foreignKey ?: $this->getForeignKey();
+
+        $localKey = $localKey ?: $this->getKeyName();
+
+        return $this->newHasOne($instance->newQuery(), $this, $foreignKey, $localKey);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasMany($related, $foreignKey = null, $localKey = null)
+    {
+        $instance = $this->newRelatedInstance($related);
+
+        $foreignKey = $foreignKey ?: $this->getForeignKey();
+
+        $localKey = $localKey ?: $this->getKeyName();
+
+        return $this->newHasMany($instance->newQuery(), $this, $foreignKey, $localKey);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    function newBelongsTo(BaseBuilder $query, BaseModel $child, $foreignKey, $ownerKey, $relation)
+    {
+        return new BelongsTo($query, $child, $foreignKey, $ownerKey, $relation);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    function newBelongsToMany(BaseBuilder $query, BaseModel $parent, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey, $relationName = null)
+    {
+        return new BelongsToMany($query, $parent, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey, $relationName);
     }
 }

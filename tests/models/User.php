@@ -17,42 +17,32 @@ class User extends Eloquent implements AuthenticatableContract, CanResetPassword
 
     public function books()
     {
-        return $this->hasMany('Book', 'author_id');
+        return $this->hasMany(Book::class, 'author_id');
     }
 
     public function items()
     {
-        return $this->hasMany('Item');
+        return $this->hasMany(Item::class);
     }
 
     public function role()
     {
-        return $this->hasOne('Role');
+        return $this->hasOne(Role::class);
     }
 
     public function clients()
     {
-        return $this->belongsToMany('Client');
+        return $this->belongsToMany(Client::class);
     }
 
     public function groups()
     {
-        return $this->belongsToMany('Group', null, 'users', 'groups');
+        return $this->belongsToMany(Group::class, null, 'users', 'groups');
     }
 
     public function photos()
     {
-        return $this->morphMany('Photo', 'imageable');
-    }
-
-    public function addresses()
-    {
-        return $this->embedsMany('Address');
-    }
-
-    public function father()
-    {
-        return $this->embedsOne('User');
+        return $this->morphMany(Photo::class, 'imageable');
     }
 
     protected function getDateFormat()

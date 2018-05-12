@@ -5,16 +5,16 @@
 
 namespace sonrac\Arango\Query;
 
+use ArangoDBClient\Exception;
 use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as IlluminateBuilder;
 use Illuminate\Database\Query\Expression;
-use Illuminate\Database\Query\Grammars\Grammar;
-use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use sonrac\Arango\Connection;
+use sonrac\Arango\Helper;
+use sonrac\Arango\Query\Grammars\Grammar;
 
 /**
  * Class QueryBuilder.
@@ -23,6 +23,11 @@ use sonrac\Arango\Connection;
  */
 class QueryBuilder extends IlluminateBuilder
 {
+    /**
+     * @var Grammar $grammar
+     */
+    public $grammar;
+
     public $bindings = [];
 
     public $operators = [
@@ -39,6 +44,100 @@ class QueryBuilder extends IlluminateBuilder
         '!~',     //tests if a string value does not match a regular expression
     ];
 
+    /**
+     * @inheritdoc
+     */
+    public function pluck($column, $key = null)
+    {
+        $column = $this->prepareColumn($column);
+        if(!is_null($key)){
+            $key = $this->prepareColumn($key);
+        }
+        $results = $this->get(is_null($key) ? [$column] : [$column, $key]);
+
+        // If the columns are qualified with a table or have an alias, we cannot use
+        // those directly in the "pluck" operations since the results from the DB
+        // are only keyed by the column itself. We'll strip the table out here.
+        return $results->pluck(
+            $this->stripTableForPluck($column),
+            $this->stripTableForPluck($key)
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function addSelect($column)
+    {
+        $column = is_array($column) ? $column : func_get_args();
+
+        $column = collect($column)->map(function($column){
+            return $this->prepareColumn($column);
+        })->toArray();
+
+        $this->columns = array_merge((array) $this->columns, $column);
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function join($table, $first, $operator = null, $second = null, $type = 'inner', $where = false)
+    {
+        $join = new JoinClause($this, $type, $table);
+
+        // If the first "column" of the join is really a Closure instance the developer
+        // is trying to build a join with a complex "on" clause containing more than
+        // one condition, so we'll add the join and call a Closure with the query.
+        if ($first instanceof \Closure) {
+            call_user_func($first, $join);
+
+            $this->joins[] = $join;
+
+            $this->addBinding($join->getBindings(), 'join');
+        }
+
+        // If the column is simply a string, we can assume the join simply has a basic
+        // "on" clause with a single condition. So we will just build the join with
+        // this simple join clauses attached to it. There is not a join callback.
+        else {
+            $method = $where ? 'where' : 'on';
+
+            $this->joins[] = $join->$method($first, $operator, $second);
+
+            $this->addBinding($join->getBindings(), 'join');
+        }
+
+        //Move wheres from join to main query (arangoDB don't have "on" method)
+        foreach ($join->wheres as $where){
+            $this->wheres[] = $where;
+        }
+
+        $join->wheres = [];
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function orderBy($column, $direction = 'asc')
+    {
+        
+        $column = $this->prepareColumn($column);
+        
+        $this->{$this->unions ? 'unionOrders' : 'orders'}[] = [
+            'column' => $column,
+            'direction' => strtolower($direction) == 'asc' ? 'asc' : 'desc',
+        ];
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function whereIn($column, $values, $boolean = 'and', $not = false)
     {
         $type = $not ? 'NotIn' : 'In';
@@ -85,6 +184,10 @@ class QueryBuilder extends IlluminateBuilder
         return $this;
     }
 
+    /**
+     * You can get last binding key from getLastBindingKey
+     * @inheritdoc
+     */
     public function addBinding($value, $type = 'where')
     {
         if (is_array($value)) {
@@ -98,11 +201,11 @@ class QueryBuilder extends IlluminateBuilder
         return $this;
     }
 
-    protected function getBindingVariableName()
-    {
-        return "B" . (count($this->bindings) + 1);
-    }
-
+    /**
+     * Return last binding key
+     *
+     * @return string
+     */
     public function getLastBindingKey()
     {
         $keys = array_keys($this->getBindings());
@@ -110,9 +213,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * Get the current query value bindings in a flattened array.
-     *
-     * @return array
+     * @inheritdoc
      */
     public function getBindings()
     {
@@ -138,8 +239,17 @@ class QueryBuilder extends IlluminateBuilder
         return $this;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function where($column, $operator = null, $value = null, $boolean = 'and')
     {
+        $column = $this->prepareColumn($column);
+
+        //For compatibility with internal framework functions
+        if($operator === '='){
+            $operator = '==';
+        }
         // If the column is an array, we will assume it is an array of key-value pairs
         // and can add them each as a where clause. We will maintain the boolean we
         // received when the method was called and pass it into the nested where.
@@ -179,7 +289,7 @@ class QueryBuilder extends IlluminateBuilder
         // where null clause to the query. So, we will allow a short-cut here to
         // that method for convenience so the developer doesn't have to check.
         if (is_null($value)) {
-            return $this->whereNull($column, $boolean, $operator !== '=');
+            return $this->whereNull($column, $boolean, $operator !== '==');
         }
 
         // If the column is making a JSON reference we'll check to see if the value
@@ -207,12 +317,57 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * Increment a column's value by a given amount.
-     *
-     * @param  string  $column
-     * @param  int     $amount
-     * @param  array   $extra
-     * @return int
+     * @inheritdoc
+     */
+    public function whereColumn($first, $operator = null, $second = null, $boolean = 'and')
+    {
+
+        if($operator === '='){
+            $operator = '==';
+        }
+
+        // If the column is an array, we will assume it is an array of key-value pairs
+        // and can add them each as a where clause. We will maintain the boolean we
+        // received when the method was called and pass it into the nested where.
+        if (is_array($first)) {
+            return $this->addArrayOfWheres($first, $boolean, 'whereColumn');
+        }
+
+        // If the given operator is not found in the list of valid operators we will
+        // assume that the developer is just short-cutting the '=' operators and
+        // we will set the operators to '=' and set the values appropriately.
+        if ($this->invalidOperator($operator)) {
+            list($second, $operator) = [$operator, '=='];
+        }
+
+        // Finally, we will add this where clause into this array of clauses that we
+        // are building for the query. All of them will be compiled via a grammar
+        // once the query is about to be executed and run against the database.
+        $type = 'Column';
+
+        $this->wheres[] = compact(
+            'type', 'first', 'operator', 'second', 'boolean'
+        );
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function whereNull($column, $boolean = 'and', $not = false)
+    {
+        $column = $this->prepareColumn($column);
+
+        $type = $not ? 'NotNull' : 'Null';
+
+        $this->wheres[] = compact('type', 'column', 'boolean');
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
      */
     public function increment($column, $amount = 1, array $extra = [])
     {
@@ -220,7 +375,7 @@ class QueryBuilder extends IlluminateBuilder
             throw new \InvalidArgumentException('Non-numeric value passed to increment method.');
         }
 
-        $wrapped = $this->grammar->wrapColumn($column);
+        $wrapped = $this->prepareColumn($column);
 
         $columns = array_merge([$column => $this->raw("$wrapped + $amount")], $extra);
 
@@ -228,12 +383,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * Decrement a column's value by a given amount.
-     *
-     * @param  string  $column
-     * @param  int     $amount
-     * @param  array   $extra
-     * @return int
+     * @inheritdoc
      */
     public function decrement($column, $amount = 1, array $extra = [])
     {
@@ -241,7 +391,7 @@ class QueryBuilder extends IlluminateBuilder
             throw new \InvalidArgumentException('Non-numeric value passed to decrement method.');
         }
 
-        $wrapped = $this->grammar->wrapColumn($column);
+        $wrapped = $this->prepareColumn($column);
 
         $columns = array_merge([$column => $this->raw("$wrapped - $amount")], $extra);
 
@@ -249,10 +399,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * Update a record in the database.
-     *
-     * @param  array  $values
-     * @return int
+     * @inheritdoc
      */
     public function update(array $values)
     {
@@ -270,6 +417,9 @@ class QueryBuilder extends IlluminateBuilder
         return $this->connection->update($aql, $this->getBindings());
     }
 
+    /**
+     * @inheritdoc
+     */
     public function delete($id = null)
     {
         // If an ID is passed to the method, we will set the where clause to check the
@@ -282,17 +432,6 @@ class QueryBuilder extends IlluminateBuilder
         return $this->connection->delete(
             $this->grammar->compileDelete($this), $this->getBindings()
         );
-    }
-
-    protected function prepareValueAndOperator($value, $operator, $useDefault = false)
-    {
-        if ($useDefault) {
-            return [$operator, '=='];
-        } elseif ($this->invalidOperatorAndValue($operator, $value)) {
-            throw new \InvalidArgumentException('Illegal operator and value combination.');
-        }
-
-        return [$value, $operator];
     }
 
     /**
@@ -309,23 +448,16 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * Execute a query for a single record by KEY.
-     *
-     * @param  string $id
-     * @param  array $columns
-     * @return mixed|static
+     * @inheritdoc
      */
     public function find($id, $columns = ['*'])
     {
-        return $this->where('doc._key', '==', $id)->limit(1)->first($columns);
+        $column = $this->prepareColumn('_key');
+        return $this->where($column, '==', $id)->limit(1)->first($columns);
     }
 
     /**
-     * Insert a new record and get the value of the primary key.
-     *
-     * @param  array   $values
-     * @param  string|null  $sequence
-     * @return int
+     * @inheritdoc
      */
     public function insertGetId(array $values, $sequence = null)
     {
@@ -348,29 +480,22 @@ class QueryBuilder extends IlluminateBuilder
     /**
      * @inheritdoc
      */
-    protected function setAggregate($function, $columns)
-    {
-        $this->aggregate = compact('function', 'columns');
-
-        if (empty($this->groups)) {
-            $this->orders = null;
-
-            unset($this->bindings['order']);
-        }
-
-        return $this;
-    }
-
-    function sum($columns = '*')
+    public function sum($columns = '*')
     {
         return (int) $this->aggregate(strtoupper(__FUNCTION__), Arr::wrap($columns));
     }
 
-    function count($columns = '*')
+    /**
+     * @inheritdoc
+     */
+    public function count($columns = '*')
     {
         return (int) $this->aggregate(strtoupper(__FUNCTION__), Arr::wrap($columns));
     }
 
+    /**
+     * @inheritdoc
+     */
     public function aggregate($function, $columns = ['*'])
     {
         $results = $this->cloneWithout(['columns'])
@@ -381,6 +506,8 @@ class QueryBuilder extends IlluminateBuilder
         if (! $results->isEmpty()) {
             return array_change_key_case((array) $results[0])['aggregate'];
         }
+
+        return null;
     }
 
     /**
@@ -396,10 +523,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * Insert a new record into the database.
-     *
-     * @param  array $values
-     * @return bool
+     * @inheritdoc
      */
     public function insert(array $values)
     {
@@ -420,10 +544,11 @@ class QueryBuilder extends IlluminateBuilder
         else {
             foreach ($values as $key => $value) {
                 ksort($value);
-
                 $values[$key] = $value;
             }
         }
+
+        $values = $this->prepareColumns($values);
 
         foreach ($values as $i => $record) {
             foreach ($record as $j => $value) {
@@ -432,12 +557,13 @@ class QueryBuilder extends IlluminateBuilder
             }
         }
 
+        $aql = $this->grammar->compileInsert($this, $values);
 
         // Finally, we will run this query against the database connection and return
         // the results. We will need to also flatten these bindings before running
         // the query so they are all in one huge, flattened array for execution.
         return $this->connection->insert(
-            $this->grammar->compileInsert($this, $values),
+            $aql,
             $this->getBindings()
         );
     }
@@ -465,10 +591,135 @@ class QueryBuilder extends IlluminateBuilder
         );
     }
 
+    /**
+     * Compile select to Aql format
+     * @return string
+     */
     public function toAql()
     {
         $aql = $this->grammar->compileSelect($this);
-        var_dump($aql);
         return $aql;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setAggregate($function, $columns)
+    {
+        $this->aggregate = compact('function', 'columns');
+
+        if (empty($this->groups)) {
+            $this->orders = null;
+
+            unset($this->bindings['order']);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function invalidOperatorAndValue($operator, $value)
+    {
+        return is_null($value) && in_array($operator, $this->operators) &&
+            ! in_array($operator, ['==', '!=']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function prepareValueAndOperator($value, $operator, $useDefault = false)
+    {
+        if ($useDefault) {
+            return [$operator, '=='];
+        } elseif ($this->invalidOperatorAndValue($operator, $value)) {
+            throw new \InvalidArgumentException('Illegal operator and value combination.');
+        }
+
+        return [$value, $operator];
+    }
+
+    /**
+     * Check exist entity name in joins or it base entity. Throw exception if didn't find.
+     * @param $column
+     * @throws Exception
+     */
+    protected function checkColumnIfJoin($column){
+        if(empty($this->joins)){
+            return;
+        }
+        $columnEntityName = Helper::getEntityNameFromColumn($column);
+
+        if(is_null($columnEntityName)){
+            throw new Exception("You can't use column ".$column." without entity name, with join.");
+        }
+
+        if($columnEntityName === Helper::getEntityName($this->from)){
+            return;
+        }
+
+        foreach ($this->joins as $join){
+            $joinEntityName = Helper::getEntityName($join->table);
+            if($columnEntityName === $joinEntityName){
+                return;
+            }
+        }
+        throw new Exception("You can't use column ".$column.' with this joins.');
+    }
+
+    /**
+     * Prepate columns from values array
+     * @param $values
+     * @return array
+     * @throws \Exception
+     */
+    protected function prepareColumns($values){
+        $res = [];
+        foreach ($values as $key => $value){
+            $column = $this->prepareColumn($key);
+            $res[$column] = $value;
+        }
+        return $res;
+    }
+
+    /**
+     * Check column for joins and wrap column (add table name and wrap in ``)
+     *
+     * @param $column
+     * @return string
+     * @throws Exception
+     */
+    protected function prepareColumn($column){
+        $this->checkColumnIfJoin($column);
+
+        $column = $this->grammar->wrapColumn($column, $this->from);
+
+        return $column;
+    }
+
+    /**
+     * Get next binding variable name
+     *
+     * @return string
+     */
+    protected function getBindingVariableName()
+    {
+        return "B" . (count($this->bindings) + 1);
+    }
+
+    /**
+     * Return table from prepared column or null
+     *
+     * @param string $column
+     * @return null|string
+     */
+    protected function stripTableForPluck($column){
+        if(is_null($column)){
+            return null;
+        }
+        $column = explode('.', $column)[1];
+
+        return trim($column, '`');
     }
 }

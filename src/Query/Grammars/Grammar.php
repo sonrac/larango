@@ -10,12 +10,10 @@ namespace sonrac\Arango\Query\Grammars;
 
 use Illuminate\Database\Query\Builder;
 use \Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
-use sonrac\Arango\Query\QueryBuilder;
+use sonrac\Arango\Helper;
 
 class Grammar extends IlluminateGrammar
 {
-    const DOCUMENT_NAME = 'doc';
-
     /**
      * The components that make up a select clause.
      *
@@ -36,7 +34,10 @@ class Grammar extends IlluminateGrammar
         'lock',
     ];
 
-    function compileInsertGetId(Builder $query, $values, $sequence)
+    /**
+     * @inheritdoc
+     */
+    public function compileInsertGetId(Builder $query, $values, $sequence)
     {
         return $this->compileInsert($query, $values) . ' RETURN NEW';
     }
@@ -44,12 +45,14 @@ class Grammar extends IlluminateGrammar
     /**
      * @inheritdoc
      */
-    function compileInsert(Builder $query, array $values)
+    public function compileInsert(Builder $query, array $values)
     {
         // Essentially we will force every insert to be treated as a batch insert which
         // simply makes creating the SQL easier for us since we can utilize the same
         // basic routine regardless of an amount of records given to us to insert.
         $collection = $this->wrapTable($query->from);
+
+        $entityName = Helper::getEntityName($query->from);
 
         if (! is_array(reset($values))) {
             $values = [$values];
@@ -70,55 +73,79 @@ class Grammar extends IlluminateGrammar
         $parameters = json_encode($parameters);
         $parameters = preg_replace('/"(\@B\w+)"/', '$1', $parameters);
 
-        $aql =  "FOR doc IN ".$parameters." INSERT doc INTO ".$collection;
+        $aql =  "FOR ".$entityName." IN ".$parameters." INSERT ".$entityName." INTO ".$collection;
         //var_dump($aql);
         return $aql;
     }
 
     /**
-     * Wrap column and add table name
+     * Prepare column before use in AQL request
+     * Add entityName and wrap it if needed.
+     * Add alias for string like (column as other_name)
+     *
+     * @param $collection
      * @param $column
      * @param bool $withCollection
      * @return string
      */
-    public function wrapColumn($column, $withCollection = true){
-        if($column !== '_key'){
-            $column = '`'.$column.'`';
+    public function wrapColumn($column, $collection = null, $withCollection = true){
+
+        $entityName = Helper::getEntityNameFromColumn($column);
+
+        $clearColumn = $this->getClearColumnName($column);
+
+        $alias = $this->getAliasNameFromColumn($column);
+
+        if(is_null($entityName) && !is_null($collection)){
+            $entityName =  Helper::getEntityName($collection);
+        }
+
+        if($clearColumn !== '_key'){
+            $clearColumn = trim($clearColumn, '`');
+            $clearColumn = '`'.$clearColumn.'`';
         }
         if($withCollection){
-            $column = 'doc.'.$column;
+            $column = $entityName.'.'.$clearColumn;
+        }
+        if($alias){
+            $column = $alias.':'.$column;
         }
         return $column;
     }
 
     /**
-     * Check table name valid
-     *
-     * @param  \Illuminate\Database\Query\Expression|string  $table
+     * Return collection name
      * @return string
      */
     public function wrapTable($table)
     {
-        //TODO: Check Is valid table?.
-        return $table;
+        return $this->wrapCollection($table);
     }
 
+    /**
+     * @inheritdoc
+     */
     function columnize(array $columns)
     {
         $resultColumns = [];
         foreach ($columns as $column){
-            $wrapColumn = '`'.$column.'`';
-            $resultColumns[] =  $wrapColumn . ': ' . static::DOCUMENT_NAME . '.' . $wrapColumn;
+            if(strpos($column, ':') !== false){
+                $resultColumns[] = $column;
+                continue;
+            }
+
+            list($entityName, $column) = explode(".", $column);
+            if($column === '`*`'){
+                $resultColumns[] = $entityName . ': '.$entityName;
+                continue;
+            }
+            $resultColumns[] =  $column . ': ' . $entityName.'.'.$column;
         }
         return implode(',', $resultColumns);
     }
 
     /**
-     * Compile an update statement into SQL.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @param  array  $values
-     * @return string
+     * @inheritdoc
      */
     public function compileUpdate(Builder $query, $values)
     {
@@ -131,13 +158,10 @@ class Grammar extends IlluminateGrammar
             return $key.' : '.$value;
         })->implode(', ');
 
-        // If the query has any "join" clauses, we will setup the joins on the builder
-        // and compile them so we can attach them to this update, as update queries
-        // can get join statements to attach to other tables when they're needed.
         $joins = '';
 
         if (isset($query->joins)) {
-            $joins = ' '.$this->compileJoins($query, $query->joins);
+            $joins = $this->compileJoins($query, $query->joins).' ';
         }
 
         // Of course, update queries may also be constrained by where clauses so we'll
@@ -145,32 +169,44 @@ class Grammar extends IlluminateGrammar
         // intended records are updated by the SQL statements we generate to run.
         $wheres = $this->compileWheres($query);
 
-        $aql = "FOR doc IN ".$table.$joins." ".$wheres." UPDATE doc WITH { ".$columns." } IN ".$table;
+        $entityName = Helper::getEntityName($table);
+
+        $aql = $joins."FOR ".$entityName." IN ".$table." ".$wheres.
+            " UPDATE ".$entityName." WITH { ".$columns." } IN ".$table;
+
         var_dump($aql);
         return $aql;
     }
 
     /**
-     * Compile a delete statement into AQL.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @return string
+     * @inheritdoc
+     */
+    protected function compileJoins(Builder $query, $joins)
+    {
+
+        return collect($joins)->map(function ($join) use(&$aql) {
+            $table = $this->wrapTable($join->table);
+            $entityName = Helper::getEntityName($join->table);
+            return 'FOR '.$entityName.' IN '.$table;
+        })->implode(' ');
+    }
+
+    /**
+     * @inheritdoc
      */
     public function compileDelete(Builder $query)
     {
         $wheres = is_array($query->wheres) ? $this->compileWheres($query) : '';
 
-        $table = $this->wrapTable($query->from);
-        $aql = "FOR doc in {$table} $wheres REMOVE doc IN {$table}";
+        $collection = $this->wrapTable($query->from);
+        $entityName = Helper::getEntityName($collection);
+        $aql = "FOR {$entityName} in {$collection} {$wheres} REMOVE {$entityName} IN {$collection}";
         var_dump($aql);
         return $aql;
     }
 
     /**
-     * Compile a select query into AQL.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @return string
+     * @inheritdoc
      */
     public function compileSelect(Builder $query)
     {
@@ -190,6 +226,13 @@ class Grammar extends IlluminateGrammar
             $this->compileComponents($query))
         );
 
+        if (isset($query->joins)) {
+            $aql = $this->compileJoins($query, $query->joins).' '.$aql;
+        }
+
+
+
+
         if(!is_null($query->aggregate)){
             $aql = $this->compileAggregateExtended($query, $query->aggregate, $aql);
         }
@@ -199,10 +242,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * Compile the components necessary for a select clause.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @return array
+     * @inheritdoc
      */
     protected function compileComponents(Builder $query)
     {
@@ -213,7 +253,8 @@ class Grammar extends IlluminateGrammar
             // see if that component exists. If it does we'll just call the compiler
             // function for the component which is responsible for making the SQL.
             if (! is_null($query->$component)) {
-                if($component === 'aggregate'){
+                if($component === 'aggregate' ||
+                   $component === 'joins'){
                     continue;
                 }
                 $method = 'compile'.ucfirst($component);
@@ -226,15 +267,11 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * Compile the "from" portion of the query.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @param  string  $collection
-     * @return string
+     * @inheritdoc
      */
     protected function compileFrom(Builder $query, $collection)
     {
-        return 'FOR '.static::DOCUMENT_NAME.' IN '.$this->wrapCollection($collection);
+        return 'FOR '.Helper::getEntityName($collection).' IN '.$this->wrapCollection($collection);
     }
 
     /**
@@ -243,14 +280,21 @@ class Grammar extends IlluminateGrammar
     protected function compileColumns(Builder $query, $columns)
     {
         if(count($columns) === 1 && $columns[0] === "*"){
-            return 'RETURN '.static::DOCUMENT_NAME;
+            return 'RETURN '.Helper::getEntityName($query->from);
         }
 
 
         return "RETURN { " . $this->columnize($columns) . " }";
     }
 
-
+    /**
+     * Return string for aggregate some column from AQL request
+     *
+     * @param Builder $query
+     * @param $aggregate
+     * @param $aql
+     * @return string
+     */
     protected function compileAggregateExtended(Builder $query, $aggregate, $aql)
     {
         return "RETURN {\"aggregate\":".$aggregate['function']."(".$aql.")}";
@@ -283,9 +327,7 @@ class Grammar extends IlluminateGrammar
      */
     protected function concatenateWhereClauses($query, $sql)
     {
-        $conjunction = $query instanceof JoinClause ? 'on' : 'FILTER';
-
-        return $conjunction.' '.$this->removeLeadingBoolean(implode(' ', $sql));
+        return 'FILTER '.$this->removeLeadingBoolean(implode(' ', $sql));
     }
 
     /**
@@ -303,7 +345,7 @@ class Grammar extends IlluminateGrammar
      */
     protected function whereBasic(Builder $query, $where)
     {
-        return $this->wrapColumn($where['column']).' '.$where['operator'].' '.$where['value'];
+        return $where['column'].' '.$where['operator'].' '.$where['value'];
     }
 
     /**
@@ -312,7 +354,8 @@ class Grammar extends IlluminateGrammar
     protected function whereIn(Builder $query, $where)
     {
         if (! empty($where['values'])) {
-            return '['.implode(",", $where['values']).'] ANY == '.$this->wrapColumn($where['column']);
+            $column = $this->wrapColumn($where['column'], $query->from);
+            return '['.implode(",", $where['values']).'] ANY == '.$column;
         }
 
         return '0 = 1';
@@ -324,20 +367,37 @@ class Grammar extends IlluminateGrammar
     protected function whereNotIn(Builder $query, $where)
     {
         if (! empty($where['values'])) {
-            return '['.implode(",", $where['values']).'] NONE == '.$this->wrapColumn($where['column']);
+            $column = $this->wrapColumn($where['table'],$where['column']);
+            return '['.implode(",", $where['values']).'] NONE == '.$column;
         }
 
         return '0 = 1';
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function whereNull(Builder $query, $where)
     {
-        return $this->wrapColumn($where['column']).' == NULL';
+        return $this->wrapColumn($where['column'], $query->from).' == NULL';
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function whereNotNull(Builder $query, $where)
     {
-        return $this->wrapColumn($where['column']).' != NULL';
+        return $this->wrapColumn($where['column'], $query->from).' != NULL';
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function whereColumn(Builder $query, $where)
+    {
+        $firstWrapColumn = $this->wrapColumn($where['first'], $query->from);
+        $secondWrapColumn = $this->wrapColumn($where['second'], $query->from);
+        return $firstWrapColumn.' '.$where['operator'].' '.$secondWrapColumn;
     }
 
     /**
@@ -352,7 +412,21 @@ class Grammar extends IlluminateGrammar
         return '';
     }
 
+    /**
+     * @inheritdoc
+     */
+    protected function compileOrdersToArray(Builder $query, $orders)
+    {
+        return array_map(function ($order) {
+            return ! isset($order['sql'])
+                ? $order['column'].' '.$order['direction']
+                : $order['sql'];
+        }, $orders);
+    }
 
+    /**
+     * @inheritdoc
+     */
     protected function compileLimit(Builder $query, $limit)
     {
         $result = 'LIMIT ';
@@ -365,6 +439,9 @@ class Grammar extends IlluminateGrammar
         return $result;
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function compileOffset(Builder $query, $offset)
     {
         if(!isset($query->limit)){
@@ -374,10 +451,30 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
+     * Wrap collection name
      * @param string $collection
      * @return string
      */
     protected function wrapCollection($collection){
-        return "`".$collection."`";
+        return "`".trim($collection,'`')."`";
+    }
+
+    protected function getClearColumnName($column){
+        $parts = explode('.', $column);
+        if(count($parts) > 1){
+            $column = $parts[1];
+        }
+        $column = explode('as', $column)[0];
+
+        return trim($column, '` ');
+    }
+
+    protected function getAliasNameFromColumn($column){
+        $parts = explode('as', $column);
+        if(count($parts) < 2){
+            return null;
+        }
+
+        return '`'.trim($parts[1], '` ').'`';
     }
 }

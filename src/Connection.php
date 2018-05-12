@@ -10,9 +10,9 @@ use ArangoDBClient\Connection as ArangoDBConnection;
 use ArangoDBClient\ConnectionOptions as ArangoDBConnectionOptions;
 use ArangoDBClient\Document;
 use ArangoDBClient\Exception as ArangoException;
+use ArangoDBClient\Exception;
 use ArangoDBClient\Statement;
 use ArangoDBClient\UpdatePolicy as ArangoDBUpdatePolicy;
-use Closure;
 use Illuminate\Database\Connection as IlluminateConnection;
 use sonrac\Arango\Query\Grammars\Grammar;
 use sonrac\Arango\Query\Processors\Processor;
@@ -51,6 +51,8 @@ class Connection extends IlluminateConnection
      *
      * @param array $config Connection options
      *
+     * @throws Exception
+     *
      * @author Donii Sergii <doniysa@gmail.com>
      */
     public function __construct(array $config = [])
@@ -70,6 +72,8 @@ class Connection extends IlluminateConnection
     }
 
     /**
+     * Send AQL request to ArangoDB and return response with flat array
+     *
      * @param string $query
      * @param array $bindings
      * @param bool $useReadPdo
@@ -92,6 +96,7 @@ class Connection extends IlluminateConnection
 
             if(count($bindings) > 0){
                 $options['bindVars'] = $this->prepareBindings($bindings);
+                var_dump($options['bindVars']);
             }
 
             $statement = new Statement($this->getArangoClient(), $options);
@@ -111,9 +116,7 @@ class Connection extends IlluminateConnection
         });
     }
     /**
-     * Get a new query builder instance.
-     *
-     * @return \Illuminate\Database\Query\Builder
+     * @inheritdoc
      */
     public function query()
     {
@@ -150,6 +153,9 @@ class Connection extends IlluminateConnection
         });
     }
 
+    /**
+     * @inheritdoc
+     */
     public function affectingStatement($query, $bindings = [])
     {
         return $this->run($query, $bindings, function ($query, $bindings) {
@@ -201,7 +207,9 @@ class Connection extends IlluminateConnection
      *
      * @param array $config Config
      *
-     * @return \ArangoDBClient\Connection
+     * @return ArangoDBConnection
+     *
+     * @throws \ArangoDBClient\Exception
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
@@ -362,6 +370,7 @@ class Connection extends IlluminateConnection
     /**
      * Reconnect to the database if a PDO connection is missing.
      *
+     * @throws \ArangoDBClient\Exception
      * @return void
      */
     protected function reconnectIfMissingConnection()

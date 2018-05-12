@@ -13,6 +13,9 @@ use \Illuminate\Database\Query\Processors\Processor as IlluminateProcessor;
 
 class Processor extends IlluminateProcessor
 {
+    /**
+     * @inheritdoc
+     */
     function processInsertGetId(Builder $query, $sql, $values, $sequence = null)
     {
         $result = $query->getConnection()->insert($sql, $values);

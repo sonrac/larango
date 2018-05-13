@@ -66,7 +66,7 @@ class Grammar extends IlluminateGrammar
         foreach ($values as $record) {
             $bindValuesTmp = [];
             foreach ($columns as $column) {
-                if (!isset($record[$column])){
+                if (!isset($record[$column])) {
                     continue;
                 }
                 $bindValuesTmp[$column] = $record[$column];
@@ -76,7 +76,7 @@ class Grammar extends IlluminateGrammar
         $parameters = json_encode($parameters);
         $parameters = preg_replace('/"(\@B\w+)"/', '$1', $parameters);
 
-        $aql =  "FOR {$entityName} IN {$parameters} INSERT {$entityName} INTO {$collection}";
+        $aql = "FOR {$entityName} IN {$parameters} INSERT {$entityName} INTO {$collection}";
         return $aql;
     }
 
@@ -219,9 +219,6 @@ class Grammar extends IlluminateGrammar
             $aql = $this->compileJoins($query, $query->joins).' '.$aql;
         }
 
-
-
-
         if (!is_null($query->aggregate)) {
             $aql = $this->compileAggregateExtended($query, $query->aggregate, $aql);
         }
@@ -235,7 +232,6 @@ class Grammar extends IlluminateGrammar
      */
     protected function compileJoins(Builder $query, $joins)
     {
-
         return collect($joins)->map(function ($join) use (&$aql) {
             $table = $this->wrapTable($join->table);
             $entityName = getEntityName($join->table);
@@ -284,7 +280,6 @@ class Grammar extends IlluminateGrammar
         if (count($columns) === 1 && $columns[0] === '*') {
             return 'RETURN '.getEntityName($query->from);
         }
-
 
         return 'RETURN { ' . $this->columnize($columns) . ' }';
     }
@@ -355,7 +350,7 @@ class Grammar extends IlluminateGrammar
      */
     protected function whereIn(Builder $query, $where)
     {
-        if (! empty($where['values'])) {
+        if (!empty($where['values'])) {
             $column = $this->wrapColumn($where['column'], $query->from);
             return '['.implode(',', $where['values']).'] ANY == '.$column;
         }
@@ -368,7 +363,7 @@ class Grammar extends IlluminateGrammar
      */
     protected function whereNotIn(Builder $query, $where)
     {
-        if (! empty($where['values'])) {
+        if (!empty($where['values'])) {
             $column = $this->wrapColumn($where['table'],$where['column']);
             return '['.implode(",", $where['values']).'] NONE == '.$column;
         }

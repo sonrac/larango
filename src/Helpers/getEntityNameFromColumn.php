@@ -2,7 +2,6 @@
 
 namespace sonrac\Arango\Helpers;
 
-
 /**
  * Return entity name from prepared column or null if don't exist
  *

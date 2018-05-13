@@ -1,12 +1,13 @@
 <?php
+
 namespace sonrac\Arango\Eloquent;
 
+use Illuminate\Database\Eloquent\Builder as BaseBuilder;
 use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Support\Str;
 use sonrac\Arango\Eloquent\Reletations\BelongsTo;
 use sonrac\Arango\Eloquent\Reletations\BelongsToMany;
 use sonrac\Arango\Query\QueryBuilder;
-use Illuminate\Database\Eloquent\Builder as BaseBuilder;
 use function sonrac\Arango\Helpers\getEntityName;
 
 abstract class Model extends BaseModel

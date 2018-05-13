@@ -112,6 +112,7 @@ class Connection extends IlluminateConnection
             return $resultingDocuments;
         });
     }
+
     /**
      * {@inheritdoc}
      */

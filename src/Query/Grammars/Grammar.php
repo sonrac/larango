@@ -55,7 +55,7 @@ class Grammar extends IlluminateGrammar
 
         $entityName = getEntityName($query->from);
 
-        if (! is_array(reset($values))) {
+        if (!is_array(reset($values))) {
             $values = [$values];
         }
 
@@ -66,16 +66,17 @@ class Grammar extends IlluminateGrammar
         foreach ($values as $record) {
             $bindValuesTmp = [];
             foreach ($columns as $column) {
-                if (!isset($record[$column])) continue;
+                if (!isset($record[$column])){
+                    continue;
+                }
                 $bindValuesTmp[$column] = $record[$column];
             }
-            $parameters[] =  $bindValuesTmp;
+            $parameters[] = $bindValuesTmp;
         }
         $parameters = json_encode($parameters);
         $parameters = preg_replace('/"(\@B\w+)"/', '$1', $parameters);
 
-        $aql =  "FOR ".$entityName." IN ".$parameters." INSERT ".$entityName." INTO ".$collection;
-        //var_dump($aql);
+        $aql =  "FOR {$entityName} IN {$parameters} INSERT {$entityName} INTO {$collection}";
         return $aql;
     }
 
@@ -91,7 +92,6 @@ class Grammar extends IlluminateGrammar
      */
     public function wrapColumn($column, $collection = null, $withCollection = true)
     {
-
         $entityName = getEntityNameFromColumn($column);
 
         $clearColumn = $this->getClearColumnName($column);
@@ -99,7 +99,7 @@ class Grammar extends IlluminateGrammar
         $alias = $this->getAliasNameFromColumn($column);
 
         if (is_null($entityName) && !is_null($collection)) {
-            $entityName =  getEntityName($collection);
+            $entityName = getEntityName($collection);
         }
 
         if ($clearColumn !== '_key') {
@@ -136,12 +136,12 @@ class Grammar extends IlluminateGrammar
                 continue;
             }
 
-            list($entityName, $column) = explode(".", $column);
+            list($entityName, $column) = explode('.', $column);
             if ($column === '`*`') {
                 $resultColumns[] = $entityName . ': '.$entityName;
                 continue;
             }
-            $resultColumns[] =  $column . ': ' . $entityName.'.'.$column;
+            $resultColumns[] = $column . ': ' . $entityName . '.' . $column;
         }
         return implode(',', $resultColumns);
     }
@@ -173,8 +173,8 @@ class Grammar extends IlluminateGrammar
 
         $entityName = getEntityName($table);
 
-        $aql = $joins."FOR ".$entityName." IN ".$table." ".$wheres.
-            " UPDATE ".$entityName." WITH { ".$columns." } IN ".$table;
+        $aql = $joins.'FOR '.$entityName.' IN '.$table.' '.$wheres.
+            ' UPDATE '.$entityName.' WITH { '.$columns.' } IN '.$table;
 
         var_dump($aql);
         return $aql;
@@ -236,7 +236,7 @@ class Grammar extends IlluminateGrammar
     protected function compileJoins(Builder $query, $joins)
     {
 
-        return collect($joins)->map(function ($join) use(&$aql) {
+        return collect($joins)->map(function ($join) use (&$aql) {
             $table = $this->wrapTable($join->table);
             $entityName = getEntityName($join->table);
             return 'FOR '.$entityName.' IN '.$table;
@@ -254,7 +254,7 @@ class Grammar extends IlluminateGrammar
             // To compile the query, we'll spin through each component of the query and
             // see if that component exists. If it does we'll just call the compiler
             // function for the component which is responsible for making the SQL.
-            if (! is_null($query->$component)) {
+            if (!is_null($query->$component)) {
                 if ($component === 'aggregate' ||
                    $component === 'joins') {
                     continue;
@@ -281,12 +281,12 @@ class Grammar extends IlluminateGrammar
      */
     protected function compileColumns(Builder $query, $columns)
     {
-        if (count($columns) === 1 && $columns[0] === "*") {
+        if (count($columns) === 1 && $columns[0] === '*') {
             return 'RETURN '.getEntityName($query->from);
         }
 
 
-        return "RETURN { " . $this->columnize($columns) . " }";
+        return 'RETURN { ' . $this->columnize($columns) . ' }';
     }
 
     /**
@@ -299,7 +299,7 @@ class Grammar extends IlluminateGrammar
      */
     protected function compileAggregateExtended(Builder $query, $aggregate, $aql)
     {
-        return "RETURN {\"aggregate\":".$aggregate['function']."(".$aql.")}";
+        return 'RETURN {"aggregate":'.$aggregate['function'].'('.$aql.')}';
     }
 
     /**
@@ -357,7 +357,7 @@ class Grammar extends IlluminateGrammar
     {
         if (! empty($where['values'])) {
             $column = $this->wrapColumn($where['column'], $query->from);
-            return '['.implode(",", $where['values']).'] ANY == '.$column;
+            return '['.implode(',', $where['values']).'] ANY == '.$column;
         }
 
         return '0 = 1';
@@ -420,7 +420,7 @@ class Grammar extends IlluminateGrammar
     protected function compileOrdersToArray(Builder $query, $orders)
     {
         return array_map(function ($order) {
-            return ! isset($order['sql'])
+            return !isset($order['sql'])
                 ? $order['column'].' '.$order['direction']
                 : $order['sql'];
         }, $orders);
@@ -434,9 +434,9 @@ class Grammar extends IlluminateGrammar
         $result = 'LIMIT ';
 
         if (isset($query->offset)) {
-            $result .= (int)$query->offset.', ';
+            $result .= (int) $query->offset.', ';
         }
-        $result .= (int)$limit;
+        $result .= (int) $limit;
 
         return $result;
     }
@@ -459,7 +459,7 @@ class Grammar extends IlluminateGrammar
      */
     protected function wrapCollection($collection)
     {
-        return "`".trim($collection,'`')."`";
+        return '`'.trim($collection,'`').'`';
     }
 
     protected function getClearColumnName($column)

@@ -13,9 +13,9 @@ use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use sonrac\Arango\Connection;
+use sonrac\Arango\Query\Grammars\Grammar;
 use function sonrac\Arango\Helpers\getEntityName;
 use function sonrac\Arango\Helpers\getEntityNameFromColumn;
-use sonrac\Arango\Query\Grammars\Grammar;
 
 /**
  * Class QueryBuilder.
@@ -72,7 +72,7 @@ class QueryBuilder extends IlluminateBuilder
     {
         $column = is_array($column) ? $column : func_get_args();
 
-        $column = collect($column)->map(function($column) {
+        $column = collect($column)->map(function ($column) {
             return $this->prepareColumn($column);
         })->toArray();
 
@@ -125,9 +125,7 @@ class QueryBuilder extends IlluminateBuilder
      */
     public function orderBy($column, $direction = 'asc')
     {
-        
         $column = $this->prepareColumn($column);
-        
         $this->{$this->unions ? 'unionOrders' : 'orders'}[] = [
             'column' => $column,
             'direction' => strtolower($direction) == 'asc' ? 'asc' : 'desc',
@@ -210,7 +208,7 @@ class QueryBuilder extends IlluminateBuilder
     public function getLastBindingKey()
     {
         $keys = array_keys($this->getBindings());
-        return "@" . array_pop($keys);
+        return '@' . array_pop($keys);
     }
 
     /**
@@ -372,7 +370,7 @@ class QueryBuilder extends IlluminateBuilder
      */
     public function increment($column, $amount = 1, array $extra = [])
     {
-        if (! is_numeric($amount)) {
+        if (!is_numeric($amount)) {
             throw new \InvalidArgumentException('Non-numeric value passed to increment method.');
         }
 
@@ -388,7 +386,7 @@ class QueryBuilder extends IlluminateBuilder
      */
     public function decrement($column, $amount = 1, array $extra = [])
     {
-        if (! is_numeric($amount)) {
+        if (!is_numeric($amount)) {
             throw new \InvalidArgumentException('Non-numeric value passed to decrement method.');
         }
 
@@ -426,7 +424,7 @@ class QueryBuilder extends IlluminateBuilder
         // If an ID is passed to the method, we will set the where clause to check the
         // ID to let developers to simply and quickly remove a single row from this
         // database without manually specifying the "where" clauses on the query.
-        if (! is_null($id)) {
+        if (!is_null($id)) {
             $this->where($this->from.'.id', '=', $id);
         }
 
@@ -504,7 +502,7 @@ class QueryBuilder extends IlluminateBuilder
             ->setAggregate($function, $columns)
             ->get($columns);
 
-        if (! $results->isEmpty()) {
+        if (!$results->isEmpty()) {
             return array_change_key_case((array) $results[0])['aggregate'];
         }
 
@@ -624,7 +622,7 @@ class QueryBuilder extends IlluminateBuilder
     protected function invalidOperatorAndValue($operator, $value)
     {
         return is_null($value) && in_array($operator, $this->operators) &&
-            ! in_array($operator, ['==', '!=']);
+            !in_array($operator, ['==', '!=']);
     }
 
     /**
@@ -654,7 +652,7 @@ class QueryBuilder extends IlluminateBuilder
         $columnEntityName = getEntityNameFromColumn($column);
 
         if (is_null($columnEntityName)) {
-            throw new Exception("You can't use column ".$column." without entity name, with join.");
+            throw new Exception('You can\'t use column '.$column.' without entity name, with join.');
         }
 
         if ($columnEntityName === getEntityName($this->from)) {
@@ -667,7 +665,7 @@ class QueryBuilder extends IlluminateBuilder
                 return;
             }
         }
-        throw new Exception("You can't use column ".$column.' with this joins.');
+        throw new Exception('You can\'t use column '.$column.' with this joins.');
     }
 
     /**
@@ -709,7 +707,7 @@ class QueryBuilder extends IlluminateBuilder
      */
     protected function getBindingVariableName()
     {
-        return "B" . (count($this->bindings) + 1);
+        return 'B' . (count($this->bindings) + 1);
     }
 
     /**

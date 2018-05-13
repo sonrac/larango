@@ -8,7 +8,7 @@
 
 namespace sonrac\Arango\Eloquent;
 
-use \Illuminate\Database\Eloquent\SoftDeletes as BaseSoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletes as BaseSoftDeletes;
 
 trait SoftDeletes
 {

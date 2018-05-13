@@ -17,7 +17,7 @@ abstract class BaseTestCase extends \Orchestra\Testbench\TestCase
     protected function getPackageProviders($app)
     {
         return [
-            \sonrac\Arango\ArangoServiceProvider::class
+            \sonrac\Arango\ArangoServiceProvider::class,
         ];
     }
 
@@ -33,7 +33,6 @@ abstract class BaseTestCase extends \Orchestra\Testbench\TestCase
 
         $app['config']->set('app.key', 'ZsZewWyUJ5FsKp9lMwv4tYbNlegQilM7');
 
-
         $app['config']->set('database.default', 'arangodb');
         $app['config']->set('database.connections.arangodb', $config['connections']['arangodb']);
 
@@ -41,4 +40,5 @@ abstract class BaseTestCase extends \Orchestra\Testbench\TestCase
         $app['config']->set('auth.providers.users.model', 'User');
         $app['config']->set('cache.driver', 'array');
     }
+
 }

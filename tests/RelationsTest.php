@@ -1,4 +1,5 @@
 <?php
+
 namespace sonrac\Arango\tests;
 
 use Illuminate\Support\Facades\DB;
@@ -31,9 +32,8 @@ class RelationsTest extends BaseTestCase
 
         DB::table('client_user')->truncate();
         DB::table('group_user')->truncate();
-
     }
-    
+
     /**
      * Test has many
      *
@@ -57,7 +57,7 @@ class RelationsTest extends BaseTestCase
         $items = $user->items;
         $this->assertEquals(3, count($items));
     }
-    
+
     /**
      * Test belongs to
      *
@@ -80,10 +80,10 @@ class RelationsTest extends BaseTestCase
         $this->assertEquals('John Doe', $owner->name);
 
         $book = Book::create(['title' => 'A Clash of Kings']);
-        
+    
         $this->assertEquals(null, $book->author);
     }
-    
+
     /**
      * Test has one
      *
@@ -111,7 +111,7 @@ class RelationsTest extends BaseTestCase
         $this->assertEquals('user', $role->type);
         $this->assertEquals($user->_key, $role->user__key);
     }
-    
+
     /**
      * Test with belongs to
      *
@@ -137,7 +137,7 @@ class RelationsTest extends BaseTestCase
         $this->assertEquals(1, count($items[0]->getRelations()));
         $this->assertEquals(null, $items[3]->getRelation('user'));
     }
-    
+
     /**
      * Test with has many
      *
@@ -157,7 +157,7 @@ class RelationsTest extends BaseTestCase
         $this->assertEquals(3, count($items));
         $this->assertInstanceOf(Item::class, $items[0]);
     }
-    
+
     /**
      * Test with has one
      *
@@ -174,7 +174,7 @@ class RelationsTest extends BaseTestCase
         $role = $user->getRelation('role');
         $this->assertInstanceOf(Role::class, $role);
     }
-    
+
     /**
      * Test easy relation
      *
@@ -204,7 +204,7 @@ class RelationsTest extends BaseTestCase
         $this->assertEquals('admin', $role->type);
         $this->assertEquals($user->_key, $role->user__key);
     }
-    
+
     /**
      * @group RelationsTest
      * @group testBelongsToMany
@@ -216,7 +216,7 @@ class RelationsTest extends BaseTestCase
 
         // Add 2 clients
         $user->clients()->save(new Client(['name' => 'Pork Pies Ltd.']));
-        $user->clients()->create(['name' => 'Buffet Bar Inc.']);//first
+        $user->clients()->create(['name' => 'Buffet Bar Inc.']); //first
 
         $user = User::with('clients')->find($user->_key);
         $client = Client::with('users')->where('name', 'Pork Pies Ltd.')->first();
@@ -232,7 +232,7 @@ class RelationsTest extends BaseTestCase
         $this->assertCount(1, $client->users);
 
         // Now create a new user to an existing client
-        $user = $client->users()->create(['name' => 'Jane Doe']);//second
+        $user = $client->users()->create(['name' => 'Jane Doe']); //second
 
         $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $user->clients);
         $this->assertInstanceOf(Client::class, $user->clients->first());
@@ -280,7 +280,7 @@ class RelationsTest extends BaseTestCase
         $this->assertCount(1, $user->clients);
         $this->assertCount(2, $client->users);
     }
-    
+
     /**
      * @group RelationsTest
      */
@@ -318,7 +318,7 @@ class RelationsTest extends BaseTestCase
         $this->assertStringStartsWith('synced', $user->clients[0]->name);
         $this->assertStringStartsWith('synced', $user->clients[1]->name);
     }
-    
+
     /**
      * @group RelationsTest
      */
@@ -362,7 +362,7 @@ class RelationsTest extends BaseTestCase
         $user->clients()->attach([$client1, $client2]);
         $this->assertCount(2, $user->clients);
     }
-    
+
     /**
      * @group RelationsTest
      */
@@ -377,7 +377,7 @@ class RelationsTest extends BaseTestCase
         $user->clients()->attach($collection);
         $this->assertCount(2, $user->clients);
     }
-    
+
     /**
      * @group RelationsTest
      */
@@ -407,7 +407,7 @@ class RelationsTest extends BaseTestCase
         $this->assertTrue(is_array($groupsRelation->getBindings()), 'Assert that bindings are an array');
         $this->assertTrue(is_array($groupsRelation->getRawBindings()), 'Assert that raw bindings are an array');
     }
-    
+
     /**
      * @group RelationsTest
      */
@@ -454,7 +454,7 @@ class RelationsTest extends BaseTestCase
         $this->assertTrue(array_key_exists('imageable', $relations));
         $this->assertInstanceOf('Client', $photos[1]->imageable);
     }
-    
+
     /**
      * @group RelationsTest
      */
@@ -483,7 +483,7 @@ class RelationsTest extends BaseTestCase
         })->get();
         $this->assertCount(1, $authors);
     }
-    
+
     /**
      * @group RelationsTest
      */
@@ -501,7 +501,7 @@ class RelationsTest extends BaseTestCase
         $this->assertEquals('John Doe', $users[0]->name);
         $this->assertEquals('Jane Doe', $users[1]->name);
     }
-    
+
     /**
      * @group RelationsTest
      */
@@ -527,7 +527,7 @@ class RelationsTest extends BaseTestCase
         $this->assertEquals(1, $author->books()->count());
         $this->assertEquals($author->_key, $book->author_id);
     }
-    
+
     /**
      * @group RelationsTest
      */

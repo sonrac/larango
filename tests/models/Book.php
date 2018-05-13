@@ -1,4 +1,6 @@
-<?php namespace sonrac\Arango\tests\models;
+<?php
+
+namespace sonrac\Arango\tests\models;
 
 use sonrac\Arango\Eloquent\Model as Eloquent;
 
@@ -10,6 +12,6 @@ class Book extends Eloquent
 
     public function author()
     {
-        return $this->belongsTo( User::class, 'author_id');
+        return $this->belongsTo(User::class, 'author_id');
     }
 }

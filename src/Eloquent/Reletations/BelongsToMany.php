@@ -8,8 +8,7 @@
 
 namespace sonrac\Arango\Eloquent\Reletations;
 
-use \Illuminate\Database\Eloquent\Relations\BelongsToMany as BelongsToManyBase;
-use \Illuminate\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany as BelongsToManyBase;
 
 class BelongsToMany extends BelongsToManyBase
 {

@@ -1,4 +1,6 @@
-<?php namespace sonrac\Arango\tests\models;
+<?php
+
+namespace sonrac\Arango\tests\models;
 
 use sonrac\Arango\Eloquent\Model as Eloquent;
 

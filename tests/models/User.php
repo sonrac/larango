@@ -1,10 +1,12 @@
-<?php namespace sonrac\Arango\tests\models;
+<?php
 
-use sonrac\Arango\Eloquent\Model as Eloquent;
+namespace sonrac\Arango\tests\models;
+
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use sonrac\Arango\Eloquent\Model as Eloquent;
 
 class User extends Eloquent implements AuthenticatableContract, CanResetPasswordContract
 {

@@ -1,5 +1,7 @@
 <?php
+
 namespace sonrac\Arango\tests;
+
 use Illuminate\Support\Facades\DB;
 
 class QueryBuilderTest extends BaseTestCase
@@ -11,7 +13,6 @@ class QueryBuilderTest extends BaseTestCase
     {
         DB::table('users')->truncate();
         DB::table('items')->truncate();
-        //$this->tearDown();
     }
 
     /**
@@ -117,7 +118,6 @@ class QueryBuilderTest extends BaseTestCase
      */
     public function testUpdate()
     {
-
         DB::table('users')->insert(['name' => 'John Doe', 'age' => 30]);
         DB::table('users')->insert(['name' => 'Jane Doe', 'age' => 20]);
 
@@ -134,7 +134,6 @@ class QueryBuilderTest extends BaseTestCase
      */
     public function testDelete()
     {
-
         DB::table('users')->insert(['name' => 'John Doe', 'age' => 25]);
         DB::table('users')->insert(['name' => 'Jane Doe', 'age' => 20]);
 
@@ -160,7 +159,6 @@ class QueryBuilderTest extends BaseTestCase
      */
     public function testTake()
     {
-
         DB::table('items')->insert(['name' => 'knife', 'type' => 'sharp', 'amount' => 34]);
         DB::table('items')->insert(['name' => 'fork',  'type' => 'sharp', 'amount' => 20]);
         DB::table('items')->insert(['name' => 'spoon', 'type' => 'round', 'amount' => 3]);
@@ -201,7 +199,6 @@ class QueryBuilderTest extends BaseTestCase
      */
     public function testList()
     {
-
         DB::table('items')->insert(['name' => 'knife', 'type' => 'sharp', 'amount' => 34]);
         DB::table('items')->insert(['name' => 'fork',  'type' => 'sharp', 'amount' => 20]);
         DB::table('items')->insert(['name' => 'spoon', 'type' => 'round', 'amount' => 3]);

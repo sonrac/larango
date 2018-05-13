@@ -8,11 +8,10 @@
 
 namespace sonrac\Arango\Eloquent\Reletations;
 
-use \Illuminate\Database\Eloquent\Relations\BelongsTo as BaseBelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo as BaseBelongsTo;
 
 class BelongsTo extends BaseBelongsTo
 {
-
     /**
      * {@inheritdoc}
      */

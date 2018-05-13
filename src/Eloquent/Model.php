@@ -5,9 +5,9 @@ use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Support\Str;
 use sonrac\Arango\Eloquent\Reletations\BelongsTo;
 use sonrac\Arango\Eloquent\Reletations\BelongsToMany;
-use function sonrac\Arango\Helpers\getEntityName;
 use sonrac\Arango\Query\QueryBuilder;
 use Illuminate\Database\Eloquent\Builder as BaseBuilder;
+use function sonrac\Arango\Helpers\getEntityName;
 
 abstract class Model extends BaseModel
 {
@@ -68,7 +68,6 @@ abstract class Model extends BaseModel
         $attributesResult = [];
         foreach ($attributes as $key => $value) {
             if (is_array($value) && $this->getEntityName() === $key) {
-
                 $attributesResult = array_merge($attributesResult, $value);
                 continue;
             }

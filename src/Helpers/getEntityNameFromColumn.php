@@ -1,4 +1,5 @@
 <?php
+
 namespace sonrac\Arango\Helpers;
 
 
@@ -11,8 +12,7 @@ namespace sonrac\Arango\Helpers;
 function getEntityNameFromColumn($column)
 {
     $parts = explode('.', $column);
-    if (count($parts) < 2)
-    {
+    if (count($parts) < 2) {
         return null;
     }
 

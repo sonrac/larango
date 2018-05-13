@@ -1,23 +1,6 @@
 version: "3.0"
 
 services:
-  fpm:
-    image: registry.gitlab.sonrac.info:4567/docker/fpm:master
-    volumes:
-      - ./:/home/maps
-    networks:
-      - internal
-  nginx:
-    image: registry.gitlab.sonrac.info:4567/docker/nginx:master
-    depends_on:
-      - fpm
-    environment:
-      - ENVIRONMENT=production
-      - SITE_NAME=dev-api.market-map.net
-    volumes:
-      - ./:/home/maps
-    ports:
-      - 1234:80
   arangodb:
      image: arangodb
      environment:

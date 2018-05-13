@@ -16,5 +16,4 @@ use Illuminate\Database\Schema\Grammars\Grammar as SchemaGrammar;
  */
 class Grammar extends SchemaGrammar
 {
-
 }

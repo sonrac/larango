@@ -1,7 +1,7 @@
 <?php
+
 namespace sonrac\Arango\tests;
 
-use sonrac\Arango\Collection;
 use sonrac\Arango\Eloquent\Model;
 use sonrac\Arango\tests\models\Book;
 use sonrac\Arango\tests\models\Item;
@@ -40,7 +40,6 @@ class ModelTest extends BaseTestCase
 
         $this->assertEquals(true, $user->exists);
         $this->assertEquals(1, User::count());
-
 
         $this->assertTrue(isset($user->_key));
         $this->assertNotEquals('', (string) $user->_key);

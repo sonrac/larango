@@ -7,17 +7,17 @@ use sonrac\Arango\Eloquent\Reletations\BelongsTo;
 use sonrac\Arango\Eloquent\Reletations\BelongsToMany;
 use function sonrac\Arango\Helpers\getEntityName;
 use sonrac\Arango\Query\QueryBuilder;
-use \Illuminate\Database\Eloquent\Builder as BaseBuilder;
+use Illuminate\Database\Eloquent\Builder as BaseBuilder;
 
 abstract class Model extends BaseModel
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected $primaryKey = '_key';
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected $keyType = 'string';
 
@@ -26,7 +26,8 @@ abstract class Model extends BaseModel
      *
      * @return string
      */
-    function getCollection(){
+    public function getCollection()
+    {
         return $this->getTable();
     }
 
@@ -35,24 +36,13 @@ abstract class Model extends BaseModel
      *
      * @param string $collection
      */
-    function setCollection($collection){
+    public function setCollection($collection)
+    {
         $this->table = $collection;
     }
 
     /**
-     * @inheritdoc
-     */
-    protected function newBaseQueryBuilder()
-    {
-        $connection = $this->getConnection();
-
-        return new QueryBuilder(
-            $connection, $connection->getQueryGrammar(), $connection->getPostProcessor()
-        );
-    }
-
-    /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function qualifyColumn($column)
     {
@@ -63,20 +53,21 @@ abstract class Model extends BaseModel
         return $this->getEntityName().'.'.$column;
     }
 
-    public function getEntityName(){
+    public function getEntityName()
+    {
         return getEntityName($this->getCollection());
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function newFromBuilder($attributes = [], $connection = null)
     {
         $model = $this->newInstance([], true);
 
         $attributesResult = [];
-        foreach ($attributes as $key => $value){
-            if(is_array($value) && $this->getEntityName() === $key){
+        foreach ($attributes as $key => $value) {
+            if (is_array($value) && $this->getEntityName() === $key) {
 
                 $attributesResult = array_merge($attributesResult, $value);
                 continue;
@@ -94,7 +85,7 @@ abstract class Model extends BaseModel
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function hasOne($related, $foreignKey = null, $localKey = null)
     {
@@ -108,7 +99,7 @@ abstract class Model extends BaseModel
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function hasMany($related, $foreignKey = null, $localKey = null)
     {
@@ -122,18 +113,30 @@ abstract class Model extends BaseModel
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
-    function newBelongsTo(BaseBuilder $query, BaseModel $child, $foreignKey, $ownerKey, $relation)
+    public function newBelongsTo(BaseBuilder $query, BaseModel $child, $foreignKey, $ownerKey, $relation)
     {
         return new BelongsTo($query, $child, $foreignKey, $ownerKey, $relation);
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
-    function newBelongsToMany(BaseBuilder $query, BaseModel $parent, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey, $relationName = null)
+    public function newBelongsToMany(BaseBuilder $query, BaseModel $parent, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey, $relationName = null)
     {
         return new BelongsToMany($query, $parent, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey, $relationName);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function newBaseQueryBuilder()
+    {
+        $connection = $this->getConnection();
+
+        return new QueryBuilder(
+            $connection, $connection->getQueryGrammar(), $connection->getPostProcessor()
+        );
     }
 }

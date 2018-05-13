@@ -24,7 +24,7 @@ abstract class BaseTestCase extends \Orchestra\Testbench\TestCase
     /**
      * Define environment setup.
      *
-     * @param  Illuminate\Foundation\Application    $app
+     * @param  \Illuminate\Foundation\Application    $app
      * @return void
      */
     protected function getEnvironmentSetUp($app)

@@ -1,7 +1,6 @@
 <?php
 namespace sonrac\Arango\tests;
-use sonrac\Arango\Query\QueryBuilder as Query;
-use \Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\DB;
 
 class QueryBuilderTest extends BaseTestCase
 {

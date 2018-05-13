@@ -9,14 +9,14 @@
 namespace sonrac\Arango\Eloquent\Reletations;
 
 use \Illuminate\Database\Eloquent\Relations\BelongsToMany as BelongsToManyBase;
-use Illuminate\Database\Query\Builder;
+use \Illuminate\Database\Query\Builder;
 
 class BelongsToMany extends BelongsToManyBase
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
-    function attach($id, array $attributes = [], $touch = true)
+    public function attach($id, array $attributes = [], $touch = true)
     {
         // Here we will insert the attachment records into the pivot table. Once we have
         // inserted the records, we will touch the relationships if necessary and the
@@ -31,7 +31,7 @@ class BelongsToMany extends BelongsToManyBase
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function attachNew(array $records, array $current, $touch = true)
     {
@@ -42,7 +42,7 @@ class BelongsToMany extends BelongsToManyBase
             // If the ID is not in the list of existing pivot IDs, we will insert a new pivot
             // record, otherwise, we will just update this existing record on this joining
             // table, so that the developers will easily update these records pain free.
-            if (! in_array($id, $current)) {
+            if (!in_array($id, $current)) {
                 $this->attach($id, $attributes, $touch);
 
                 $changes['attached'][] = $id;
@@ -61,12 +61,12 @@ class BelongsToMany extends BelongsToManyBase
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function formatRecordsList(array $records)
     {
         $records = collect($records)->mapWithKeys(function ($attributes, $id) {
-            if (! is_array($attributes)) {
+            if (!is_array($attributes)) {
                 list($id, $attributes) = [$attributes, []];
             }
 

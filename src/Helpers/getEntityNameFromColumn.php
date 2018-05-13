@@ -8,16 +8,18 @@ namespace sonrac\Arango\Helpers;
  * @param $column
  * @return null|string
  */
-function getEntityNameFromColumn($column){
+function getEntityNameFromColumn($column)
+{
     $parts = explode('.', $column);
-    if(count($parts) < 2){
+    if (count($parts) < 2)
+    {
         return null;
     }
 
     $tableOrEntityName = $parts[0];
     $postfix = '_entity';
     $postfixLength = strlen($postfix);
-    if(strlen($tableOrEntityName) > $postfixLength && substr($tableOrEntityName, -$postfixLength) === $postfix){
+    if (strlen($tableOrEntityName) > $postfixLength && substr($tableOrEntityName, -$postfixLength) === $postfix) {
         return $tableOrEntityName;
     }
 

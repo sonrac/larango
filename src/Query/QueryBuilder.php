@@ -46,12 +46,12 @@ class QueryBuilder extends IlluminateBuilder
     ];
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function pluck($column, $key = null)
     {
         $column = $this->prepareColumn($column);
-        if(!is_null($key)){
+        if (!is_null($key)) {
             $key = $this->prepareColumn($key);
         }
         $results = $this->get(is_null($key) ? [$column] : [$column, $key]);
@@ -66,13 +66,13 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function addSelect($column)
     {
         $column = is_array($column) ? $column : func_get_args();
 
-        $column = collect($column)->map(function($column){
+        $column = collect($column)->map(function($column) {
             return $this->prepareColumn($column);
         })->toArray();
 
@@ -82,7 +82,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function join($table, $first, $operator = null, $second = null, $type = 'inner', $where = false)
     {
@@ -111,7 +111,7 @@ class QueryBuilder extends IlluminateBuilder
         }
 
         //Move wheres from join to main query (arangoDB don't have "on" method)
-        foreach ($join->wheres as $where){
+        foreach ($join->wheres as $where) {
             $this->wheres[] = $where;
         }
 
@@ -121,7 +121,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function orderBy($column, $direction = 'asc')
     {
@@ -137,7 +137,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function whereIn($column, $values, $boolean = 'and', $not = false)
     {
@@ -187,7 +187,7 @@ class QueryBuilder extends IlluminateBuilder
 
     /**
      * You can get last binding key from getLastBindingKey
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function addBinding($value, $type = 'where')
     {
@@ -214,7 +214,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getBindings()
     {
@@ -222,7 +222,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function whereBetween($column, array $values, $boolean = 'and', $not = false)
     {
@@ -241,14 +241,14 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function where($column, $operator = null, $value = null, $boolean = 'and')
     {
         $column = $this->prepareColumn($column);
 
         //For compatibility with internal framework functions
-        if($operator === '='){
+        if ($operator === '=') {
             $operator = '==';
         }
         // If the column is an array, we will assume it is an array of key-value pairs
@@ -318,12 +318,12 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function whereColumn($first, $operator = null, $second = null, $boolean = 'and')
     {
 
-        if($operator === '='){
+        if ($operator === '=') {
             $operator = '==';
         }
 
@@ -354,7 +354,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function whereNull($column, $boolean = 'and', $not = false)
     {
@@ -368,7 +368,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function increment($column, $amount = 1, array $extra = [])
     {
@@ -384,7 +384,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function decrement($column, $amount = 1, array $extra = [])
     {
@@ -400,7 +400,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function update(array $values)
     {
@@ -419,7 +419,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function delete($id = null)
     {
@@ -436,7 +436,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function truncate()
     {
@@ -449,7 +449,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function find($id, $columns = ['*'])
     {
@@ -458,7 +458,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function insertGetId(array $values, $sequence = null)
     {
@@ -479,7 +479,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function sum($columns = '*')
     {
@@ -487,7 +487,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function count($columns = '*')
     {
@@ -495,7 +495,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function aggregate($function, $columns = ['*'])
     {
@@ -512,7 +512,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function cloneWithoutBindings(array $except)
     {
@@ -524,7 +524,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function insert(array $values)
     {
@@ -570,7 +570,17 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * Compile select to Aql format
+     * @return string
+     */
+    public function toAql()
+    {
+        $aql = $this->grammar->compileSelect($this);
+        return $aql;
+    }
+
+    /**
+     * {@inheritdoc}
      */
     protected function addDynamic($segment, $connector, $parameters, $index)
     {
@@ -583,7 +593,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function runSelect()
     {
@@ -593,17 +603,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * Compile select to Aql format
-     * @return string
-     */
-    public function toAql()
-    {
-        $aql = $this->grammar->compileSelect($this);
-        return $aql;
-    }
-
-    /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function setAggregate($function, $columns)
     {
@@ -619,7 +619,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function invalidOperatorAndValue($operator, $value)
     {
@@ -628,7 +628,7 @@ class QueryBuilder extends IlluminateBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function prepareValueAndOperator($value, $operator, $useDefault = false)
     {
@@ -646,23 +646,24 @@ class QueryBuilder extends IlluminateBuilder
      * @param $column
      * @throws Exception
      */
-    protected function checkColumnIfJoin($column){
-        if(empty($this->joins)){
+    protected function checkColumnIfJoin($column)
+    {
+        if (empty($this->joins)) {
             return;
         }
         $columnEntityName = getEntityNameFromColumn($column);
 
-        if(is_null($columnEntityName)){
+        if (is_null($columnEntityName)) {
             throw new Exception("You can't use column ".$column." without entity name, with join.");
         }
 
-        if($columnEntityName === getEntityName($this->from)){
+        if ($columnEntityName === getEntityName($this->from)) {
             return;
         }
 
-        foreach ($this->joins as $join){
+        foreach ($this->joins as $join) {
             $joinEntityName = getEntityName($join->table);
-            if($columnEntityName === $joinEntityName){
+            if ($columnEntityName === $joinEntityName) {
                 return;
             }
         }
@@ -675,9 +676,10 @@ class QueryBuilder extends IlluminateBuilder
      * @return array
      * @throws \Exception
      */
-    protected function prepareColumns($values){
+    protected function prepareColumns($values)
+    {
         $res = [];
-        foreach ($values as $key => $value){
+        foreach ($values as $key => $value) {
             $column = $this->prepareColumn($key);
             $res[$column] = $value;
         }
@@ -691,7 +693,8 @@ class QueryBuilder extends IlluminateBuilder
      * @return string
      * @throws Exception
      */
-    protected function prepareColumn($column){
+    protected function prepareColumn($column)
+    {
         $this->checkColumnIfJoin($column);
 
         $column = $this->grammar->wrapColumn($column, $this->from);
@@ -715,8 +718,9 @@ class QueryBuilder extends IlluminateBuilder
      * @param string $column
      * @return null|string
      */
-    protected function stripTableForPluck($column){
-        if(is_null($column)){
+    protected function stripTableForPluck($column)
+    {
+        if (is_null($column)) {
             return null;
         }
         $column = explode('.', $column)[1];

@@ -5,7 +5,7 @@
 
 namespace sonrac\Arango\Schema;
 
-use \Illuminate\Database\Schema\Grammars\Grammar as SchemaGrammar;
+use Illuminate\Database\Schema\Grammars\Grammar as SchemaGrammar;
 
 /**
  * Class Grammar

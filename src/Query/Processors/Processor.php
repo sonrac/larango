@@ -1,9 +1,8 @@
 <?php
 namespace sonrac\Arango\Query\Processors;
-use ArangoDBClient\Cursor;
 use ArangoDBClient\Document;
 use Illuminate\Database\Query\Builder;
-use \Illuminate\Database\Query\Processors\Processor as IlluminateProcessor;
+use Illuminate\Database\Query\Processors\Processor as IlluminateProcessor;
 /**
  * Created by PhpStorm.
  * User: admin
@@ -14,9 +13,9 @@ use \Illuminate\Database\Query\Processors\Processor as IlluminateProcessor;
 class Processor extends IlluminateProcessor
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
-    function processInsertGetId(Builder $query, $sql, $values, $sequence = null)
+    public function processInsertGetId(Builder $query, $sql, $values, $sequence = null)
     {
         $result = $query->getConnection()->insert($sql, $values);
 

@@ -7,6 +7,7 @@ namespace sonrac\Arango\Helpers;
  * @param $collection
  * @return string
  */
-function getEntityName($collection){
+function getEntityName($collection)
+{
     return $collection.'_entity';
 }

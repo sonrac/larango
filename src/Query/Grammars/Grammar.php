@@ -9,7 +9,7 @@
 namespace sonrac\Arango\Query\Grammars;
 
 use Illuminate\Database\Query\Builder;
-use \Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
+use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
 use function sonrac\Arango\Helpers\getEntityName;
 use function sonrac\Arango\Helpers\getEntityNameFromColumn;
 
@@ -36,7 +36,7 @@ class Grammar extends IlluminateGrammar
     ];
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function compileInsertGetId(Builder $query, $values, $sequence)
     {
@@ -44,7 +44,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function compileInsert(Builder $query, array $values)
     {
@@ -63,10 +63,10 @@ class Grammar extends IlluminateGrammar
 
         $parameters = [];
 
-        foreach ($values as $record){
+        foreach ($values as $record) {
             $bindValuesTmp = [];
-            foreach ($columns as $column){
-                if(!isset($record[$column])) continue;
+            foreach ($columns as $column) {
+                if (!isset($record[$column])) continue;
                 $bindValuesTmp[$column] = $record[$column];
             }
             $parameters[] =  $bindValuesTmp;
@@ -89,7 +89,8 @@ class Grammar extends IlluminateGrammar
      * @param bool $withCollection
      * @return string
      */
-    public function wrapColumn($column, $collection = null, $withCollection = true){
+    public function wrapColumn($column, $collection = null, $withCollection = true)
+    {
 
         $entityName = getEntityNameFromColumn($column);
 
@@ -97,18 +98,18 @@ class Grammar extends IlluminateGrammar
 
         $alias = $this->getAliasNameFromColumn($column);
 
-        if(is_null($entityName) && !is_null($collection)){
+        if (is_null($entityName) && !is_null($collection)) {
             $entityName =  getEntityName($collection);
         }
 
-        if($clearColumn !== '_key'){
+        if ($clearColumn !== '_key') {
             $clearColumn = trim($clearColumn, '`');
             $clearColumn = '`'.$clearColumn.'`';
         }
-        if($withCollection){
+        if ($withCollection) {
             $column = $entityName.'.'.$clearColumn;
         }
-        if($alias){
+        if ($alias) {
             $column = $alias.':'.$column;
         }
         return $column;
@@ -124,19 +125,19 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
-    function columnize(array $columns)
+    public function columnize(array $columns)
     {
         $resultColumns = [];
-        foreach ($columns as $column){
-            if(strpos($column, ':') !== false){
+        foreach ($columns as $column) {
+            if (strpos($column, ':') !== false) {
                 $resultColumns[] = $column;
                 continue;
             }
 
             list($entityName, $column) = explode(".", $column);
-            if($column === '`*`'){
+            if ($column === '`*`') {
                 $resultColumns[] = $entityName . ': '.$entityName;
                 continue;
             }
@@ -146,7 +147,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function compileUpdate(Builder $query, $values)
     {
@@ -180,20 +181,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
-     */
-    protected function compileJoins(Builder $query, $joins)
-    {
-
-        return collect($joins)->map(function ($join) use(&$aql) {
-            $table = $this->wrapTable($join->table);
-            $entityName = getEntityName($join->table);
-            return 'FOR '.$entityName.' IN '.$table;
-        })->implode(' ');
-    }
-
-    /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function compileDelete(Builder $query)
     {
@@ -207,7 +195,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function compileSelect(Builder $query)
     {
@@ -234,7 +222,7 @@ class Grammar extends IlluminateGrammar
 
 
 
-        if(!is_null($query->aggregate)){
+        if (!is_null($query->aggregate)) {
             $aql = $this->compileAggregateExtended($query, $query->aggregate, $aql);
         }
         $query->columns = $original;
@@ -243,7 +231,20 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
+     */
+    protected function compileJoins(Builder $query, $joins)
+    {
+
+        return collect($joins)->map(function ($join) use(&$aql) {
+            $table = $this->wrapTable($join->table);
+            $entityName = getEntityName($join->table);
+            return 'FOR '.$entityName.' IN '.$table;
+        })->implode(' ');
+    }
+
+    /**
+     * {@inheritdoc}
      */
     protected function compileComponents(Builder $query)
     {
@@ -254,8 +255,8 @@ class Grammar extends IlluminateGrammar
             // see if that component exists. If it does we'll just call the compiler
             // function for the component which is responsible for making the SQL.
             if (! is_null($query->$component)) {
-                if($component === 'aggregate' ||
-                   $component === 'joins'){
+                if ($component === 'aggregate' ||
+                   $component === 'joins') {
                     continue;
                 }
                 $method = 'compile'.ucfirst($component);
@@ -268,7 +269,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function compileFrom(Builder $query, $collection)
     {
@@ -276,11 +277,11 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function compileColumns(Builder $query, $columns)
     {
-        if(count($columns) === 1 && $columns[0] === "*"){
+        if (count($columns) === 1 && $columns[0] === "*") {
             return 'RETURN '.getEntityName($query->from);
         }
 
@@ -302,7 +303,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function compileWheres(Builder $query)
     {
@@ -324,7 +325,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function concatenateWhereClauses($query, $sql)
     {
@@ -332,7 +333,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function compileWheresToArray($query)
     {
@@ -342,7 +343,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function whereBasic(Builder $query, $where)
     {
@@ -350,7 +351,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function whereIn(Builder $query, $where)
     {
@@ -363,7 +364,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function whereNotIn(Builder $query, $where)
     {
@@ -376,7 +377,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function whereNull(Builder $query, $where)
     {
@@ -384,7 +385,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function whereNotNull(Builder $query, $where)
     {
@@ -392,7 +393,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function whereColumn(Builder $query, $where)
     {
@@ -402,7 +403,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function compileOrders(Builder $query, $orders)
     {
@@ -414,7 +415,7 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function compileOrdersToArray(Builder $query, $orders)
     {
@@ -426,13 +427,13 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function compileLimit(Builder $query, $limit)
     {
         $result = 'LIMIT ';
 
-        if(isset($query->offset)){
+        if (isset($query->offset)) {
             $result .= (int)$query->offset.', ';
         }
         $result .= (int)$limit;
@@ -441,11 +442,11 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function compileOffset(Builder $query, $offset)
     {
-        if(!isset($query->limit)){
+        if (!isset($query->limit)) {
             throw new \Exception("You can't set offset without limit for arangodb");
         }
         return '';
@@ -456,13 +457,15 @@ class Grammar extends IlluminateGrammar
      * @param string $collection
      * @return string
      */
-    protected function wrapCollection($collection){
+    protected function wrapCollection($collection)
+    {
         return "`".trim($collection,'`')."`";
     }
 
-    protected function getClearColumnName($column){
+    protected function getClearColumnName($column)
+    {
         $parts = explode('.', $column);
-        if(count($parts) > 1){
+        if (count($parts) > 1) {
             $column = $parts[1];
         }
         $column = explode('as', $column)[0];
@@ -470,9 +473,10 @@ class Grammar extends IlluminateGrammar
         return trim($column, '` ');
     }
 
-    protected function getAliasNameFromColumn($column){
+    protected function getAliasNameFromColumn($column)
+    {
         $parts = explode('as', $column);
-        if(count($parts) < 2){
+        if (count($parts) < 2) {
             return null;
         }
 

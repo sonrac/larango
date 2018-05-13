@@ -14,7 +14,7 @@ class BelongsTo extends BaseBelongsTo
 {
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function addEagerConstraints(array $models)
     {
@@ -22,7 +22,7 @@ class BelongsTo extends BaseBelongsTo
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function addConstraints()
     {

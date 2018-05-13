@@ -21,7 +21,7 @@ class ArangoServiceProvider extends ServiceProvider
     public function register()
     {
         // Add database driver.
-        $this->app->singleton('arangodb.connection', function($app){
+        $this->app->singleton('arangodb.connection', function($app) {
             $config = config('database.connections.arangodb');
             return new Connection($config);
         });

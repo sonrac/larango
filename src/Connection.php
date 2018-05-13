@@ -10,7 +10,6 @@ use ArangoDBClient\Connection as ArangoDBConnection;
 use ArangoDBClient\ConnectionOptions as ArangoDBConnectionOptions;
 use ArangoDBClient\Document;
 use ArangoDBClient\Exception as ArangoException;
-use ArangoDBClient\Exception;
 use ArangoDBClient\Statement;
 use ArangoDBClient\UpdatePolicy as ArangoDBUpdatePolicy;
 use Illuminate\Database\Connection as IlluminateConnection;
@@ -51,7 +50,7 @@ class Connection extends IlluminateConnection
      *
      * @param array $config Connection options
      *
-     * @throws Exception
+     * @throws ArangoException
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
@@ -91,10 +90,10 @@ class Connection extends IlluminateConnection
                 'query' => $query,
                 'count' => true,
                 'batchSize' => 1000,
-                'sanitize'  => true
+                'sanitize'  => true,
             ];
 
-            if(count($bindings) > 0){
+            if (count($bindings) > 0) {
                 $options['bindVars'] = $this->prepareBindings($bindings);
                 var_dump($options['bindVars']);
             }
@@ -106,9 +105,7 @@ class Connection extends IlluminateConnection
             $resultingDocuments = [];
 
             foreach ($cursor as $key => $document) {
-                /**
-                 * @var Document $document
-                 */
+                /* @var Document $document */
                 $resultingDocuments[$key] = $document->getAll();
             }
 
@@ -116,7 +113,7 @@ class Connection extends IlluminateConnection
         });
     }
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function query()
     {
@@ -126,7 +123,7 @@ class Connection extends IlluminateConnection
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function statement($query, $bindings = [])
     {
@@ -140,10 +137,10 @@ class Connection extends IlluminateConnection
                 'query' => $query,
                 'count' => true,
                 'batchSize' => 1000,
-                'sanitize'  => true
+                'sanitize'  => true,
             ];
 
-            if(count($bindings) > 0){
+            if (count($bindings) > 0) {
                 $options['bindVars'] = $this->prepareBindings($bindings);
             }
 
@@ -154,7 +151,7 @@ class Connection extends IlluminateConnection
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function affectingStatement($query, $bindings = [])
     {
@@ -165,10 +162,10 @@ class Connection extends IlluminateConnection
                 'query' => $query,
                 'count' => true,
                 'batchSize' => 1000,
-                'sanitize'  => true
+                'sanitize'  => true,
             ];
 
-            if(count($bindings) > 0){
+            if (count($bindings) > 0) {
                 $options['bindVars'] = $this->prepareBindings($bindings);
             }
 
@@ -354,15 +351,16 @@ class Connection extends IlluminateConnection
         return new Processor();
     }
 
-    protected function prepareBindingsInQuery($query){
+    protected function prepareBindingsInQuery($query)
+    {
         $query = explode('?', $query);
-        $result = "";
-        foreach ($query as $index => $part){
-            if($index === count($query) - 1){
+        $result = '';
+        foreach ($query as $index => $part) {
+            if ($index === count($query) - 1) {
                 $result .= $part;
                 continue;
             }
-            $result .= $part.'@B'.($index+1);
+            $result .= $part.'@B'.($index + 1);
         }
         return $result;
     }

@@ -364,8 +364,8 @@ class Grammar extends IlluminateGrammar
     protected function whereNotIn(Builder $query, $where)
     {
         if (!empty($where['values'])) {
-            $column = $this->wrapColumn($where['table'],$where['column']);
-            return '['.implode(",", $where['values']).'] NONE == '.$column;
+            $column = $this->wrapColumn($where['table'], $where['column']);
+            return '['.implode(',', $where['values']).'] NONE == '.$column;
         }
 
         return '0 = 1';
@@ -402,7 +402,7 @@ class Grammar extends IlluminateGrammar
      */
     protected function compileOrders(Builder $query, $orders)
     {
-        if (! empty($orders)) {
+        if (!empty($orders)) {
             return 'SORT '.implode(', ', $this->compileOrdersToArray($query, $orders));
         }
 
@@ -454,7 +454,7 @@ class Grammar extends IlluminateGrammar
      */
     protected function wrapCollection($collection)
     {
-        return '`'.trim($collection,'`').'`';
+        return '`'.trim($collection, '`').'`';
     }
 
     protected function getClearColumnName($column)

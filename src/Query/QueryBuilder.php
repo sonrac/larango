@@ -25,7 +25,7 @@ use function sonrac\Arango\Helpers\getEntityNameFromColumn;
 class QueryBuilder extends IlluminateBuilder
 {
     /**
-     * @var Grammar $grammar
+     * @var Grammar
      */
     public $grammar;
 
@@ -320,7 +320,6 @@ class QueryBuilder extends IlluminateBuilder
      */
     public function whereColumn($first, $operator = null, $second = null, $boolean = 'and')
     {
-
         if ($operator === '=') {
             $operator = '==';
         }
@@ -402,8 +401,6 @@ class QueryBuilder extends IlluminateBuilder
      */
     public function update(array $values)
     {
-
-
         foreach ($values as $index => $value) {
             if (!$value instanceof Expression) {
                 $this->addBinding($value, 'update');
@@ -440,7 +437,7 @@ class QueryBuilder extends IlluminateBuilder
     {
         $connection = $this->getConnection();
         /**
-         * @var Connection $connection
+         * @var Connection
          */
         $arangoDB = $connection->getArangoDB();
         $arangoDB->truncate($this->from);

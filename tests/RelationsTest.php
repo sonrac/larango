@@ -80,7 +80,7 @@ class RelationsTest extends BaseTestCase
         $this->assertEquals('John Doe', $owner->name);
 
         $book = Book::create(['title' => 'A Clash of Kings']);
-    
+
         $this->assertEquals(null, $book->author);
     }
 
@@ -128,7 +128,6 @@ class RelationsTest extends BaseTestCase
         $query = Item::with('user');
         $query = $query->orderBy('user__key', 'desc');
         $items = $query->get();
-
 
         $user = $items[0]->getRelation('user');
 

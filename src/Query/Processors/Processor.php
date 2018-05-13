@@ -5,12 +5,6 @@ namespace sonrac\Arango\Query\Processors;
 use ArangoDBClient\Document;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Processors\Processor as IlluminateProcessor;
-/**
- * Created by PhpStorm.
- * User: admin
- * Date: 21.01.2018
- * Time: 15:19
- */
 
 class Processor extends IlluminateProcessor
 {

@@ -1,4 +1,5 @@
 <?php
+
 namespace sonrac\Arango\tests;
 
 /**
@@ -40,5 +41,4 @@ abstract class BaseTestCase extends \Orchestra\Testbench\TestCase
         $app['config']->set('auth.providers.users.model', 'User');
         $app['config']->set('cache.driver', 'array');
     }
-
 }

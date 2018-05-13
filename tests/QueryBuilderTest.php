@@ -77,7 +77,6 @@ class QueryBuilderTest extends BaseTestCase
     {
         $id = DB::table('users')->insertGetId(['name' => 'John Doe']);
         $this->assertTrue(is_string($id));
-
     }
 
     /**

@@ -8,9 +8,14 @@ namespace sonrac\Arango;
 use ArangoDBClient\CollectionHandler as ArangoDBCollectionHandler;
 use ArangoDBClient\Connection as ArangoDBConnection;
 use ArangoDBClient\ConnectionOptions as ArangoDBConnectionOptions;
+use ArangoDBClient\Document;
 use ArangoDBClient\Exception as ArangoException;
+use ArangoDBClient\Statement;
 use ArangoDBClient\UpdatePolicy as ArangoDBUpdatePolicy;
 use Illuminate\Database\Connection as IlluminateConnection;
+use sonrac\Arango\Query\Grammars\Grammar;
+use sonrac\Arango\Query\Processors\Processor;
+use sonrac\Arango\Query\QueryBuilder;
 
 /**
  * Class Connection.
@@ -45,6 +50,8 @@ class Connection extends IlluminateConnection
      *
      * @param array $config Connection options
      *
+     * @throws ArangoException
+     *
      * @author Donii Sergii <doniysa@gmail.com>
      */
     public function __construct(array $config = [])
@@ -54,10 +61,123 @@ class Connection extends IlluminateConnection
         $this->arangoConnection = $this->createConnection();
 
         $this->db = new ArangoDBCollectionHandler($this->arangoConnection);
+
+        // We need to initialize a query grammar and the query post processors
+        // which are both very important parts of the database abstractions
+        // so we initialize these to their default values while starting.
+        $this->useDefaultQueryGrammar();
+
+        $this->useDefaultPostProcessor();
     }
 
     /**
-     * Get Arango.DB Query Builder
+     * Send AQL request to ArangoDB and return response with flat array
+     *
+     * @param string $query
+     * @param array $bindings
+     * @param bool $useReadPdo
+     * @return mixed
+     */
+    public function select($query, $bindings = [], $useReadPdo = true)
+    {
+        return $this->run($query, $bindings, function ($query, $bindings) use ($useReadPdo) {
+            if ($this->pretending()) {
+                return [];
+            }
+
+            $query = $this->prepareBindingsInQuery($query);
+            $options = [
+                'query' => $query,
+                'count' => true,
+                'batchSize' => 1000,
+                'sanitize'  => true,
+            ];
+
+            if (count($bindings) > 0) {
+                $options['bindVars'] = $this->prepareBindings($bindings);
+                var_dump($options['bindVars']);
+            }
+
+            $statement = new Statement($this->getArangoClient(), $options);
+
+            $cursor = $statement->execute();
+
+            $resultingDocuments = [];
+
+            foreach ($cursor as $key => $document) {
+                /* @var Document $document */
+                $resultingDocuments[$key] = $document->getAll();
+            }
+
+            return $resultingDocuments;
+        });
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function query()
+    {
+        return new QueryBuilder(
+            $this, $this->getQueryGrammar(), $this->getPostProcessor()
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function statement($query, $bindings = [])
+    {
+        return $this->run($query, $bindings, function ($query, $bindings) {
+            if ($this->pretending()) {
+                return true;
+            }
+
+            $query = $this->prepareBindingsInQuery($query);
+            $options = [
+                'query' => $query,
+                'count' => true,
+                'batchSize' => 1000,
+                'sanitize'  => true,
+            ];
+
+            if (count($bindings) > 0) {
+                $options['bindVars'] = $this->prepareBindings($bindings);
+            }
+
+            $statement = new Statement($this->getArangoClient(), $options);
+
+            return $statement->execute();
+        });
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function affectingStatement($query, $bindings = [])
+    {
+        return $this->run($query, $bindings, function ($query, $bindings) {
+            $query = $this->prepareBindingsInQuery($query);
+
+            $options = [
+                'query' => $query,
+                'count' => true,
+                'batchSize' => 1000,
+                'sanitize'  => true,
+            ];
+
+            if (count($bindings) > 0) {
+                $options['bindVars'] = $this->prepareBindings($bindings);
+            }
+
+            $statement = new Statement($this->getArangoClient(), $options);
+
+            return $statement->execute();
+        });
+    }
+
+    /**
+     * Get Arango.DB
      *
      * @return mixed
      *
@@ -85,7 +205,9 @@ class Connection extends IlluminateConnection
      *
      * @param array $config Config
      *
-     * @return \ArangoDBClient\Connection
+     * @return ArangoDBConnection
+     *
+     * @throws \ArangoDBClient\Exception
      *
      * @author Donii Sergii <doniysa@gmail.com>
      */
@@ -218,6 +340,43 @@ class Connection extends IlluminateConnection
     public function getUpdatePolicy()
     {
         return $this->getOption(ArangoDBConnectionOptions::OPTION_UPDATE_POLICY, ArangoDBUpdatePolicy::LAST);
+    }
+
+    public function getDefaultQueryGrammar()
+    {
+        return new Grammar();
+    }
+
+    public function getDefaultPostProcessor()
+    {
+        return new Processor();
+    }
+
+    protected function prepareBindingsInQuery($query)
+    {
+        $query = explode('?', $query);
+        $result = '';
+        foreach ($query as $index => $part) {
+            if ($index === count($query) - 1) {
+                $result .= $part;
+                continue;
+            }
+            $result .= $part.'@B'.($index + 1);
+        }
+        return $result;
+    }
+
+    /**
+     * Reconnect to the database if a PDO connection is missing.
+     *
+     * @throws \ArangoDBClient\Exception
+     * @return void
+     */
+    protected function reconnectIfMissingConnection()
+    {
+        if (is_null($this->arangoConnection)) {
+            $this->arangoConnection = $this->createConnection();
+        }
     }
 
     /**

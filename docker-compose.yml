@@ -1,0 +1,16 @@
+version: "3.0"
+
+services:
+  arangodb:
+     image: arangodb
+     environment:
+       - ARANGO_ROOT_PASSWORD=test
+     networks:
+       internal:
+         aliases:
+           - arangodb
+     ports:
+       - 8529:8529
+
+networks:
+  internal:

@@ -6,8 +6,8 @@
          convertErrorsToExceptions="true"
          convertNoticesToExceptions="true"
          convertWarningsToExceptions="true"
-         processIsolation="true"
-         stopOnFailure="false"
+         processIsolation="false"
+         stopOnFailure="true"
          syntaxCheck="false"
          bootstrap="tests/_bootstrap.php"
 >
